@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>第四組小遊戲 - 五達悟（手機平板操作版）</title>
+  <style>
+    html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#000;color:#fff;font-family:system-ui,"Microsoft JhengHei",sans-serif}
+    #game-frame{position:fixed;inset:0;width:100%;height:100%;border:0;background:#000}
+    #loading{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;background:#020617;z-index:10;line-height:1.8;padding:24px}
+  </style>
+</head>
+<body>
+  <iframe id="game-frame" sandbox="allow-scripts allow-same-origin allow-popups allow-pointer-lock allow-forms allow-modals" allow="autoplay; fullscreen; gamepad; encrypted-media; picture-in-picture"></iframe>
+  <div id="loading">正在載入第四組小遊戲手機／平板操作版……<br>左側移動，右側攻擊／互動／技能。</div>
+  <script>
+    const RAW_GAME='https://raw.githubusercontent.com/igudesman222/-/39397fdbf19048312c014cfcb8165c24b6e7c3f3/02-%E5%B0%8F%E9%81%8A%E6%88%B2/04-%E7%AC%AC%E5%9B%9B%E7%B5%84%E5%B0%8F%E9%81%8A%E6%88%B2-%E4%BA%94%E9%81%94%E6%82%9F.html';
+    const RAW_BASE='https://raw.githubusercontent.com/igudesman222/-/39397fdbf19048312c014cfcb8165c24b6e7c3f3/02-%E5%B0%8F%E9%81%8A%E6%88%B2/';
+    async function boot(){
+      const [html, controls] = await Promise.all([fetch(RAW_GAME).then(r=>r.text()), fetch('./mobile-game-controls.js').then(r=>r.text())]);
+      let patched = html.replace('<head>', '<head><base href="'+RAW_BASE+'">');
+      patched = patched.replace('</body>', '<script>'+controls.replace(/<\\/script>/gi,'<\\/script>')+'<\\/script></body>');
+      const frame=document.getElementById('game-frame');
+      frame.srcdoc=patched;
+      frame.addEventListener('load',()=>document.getElementById('loading').style.display='none',{once:true});
+    }
+    boot().catch(err=>{document.getElementById('loading').innerHTML='載入失敗，請重新整理頁面。<br>'+err;});
+  </script>
+</body>
+</html>
