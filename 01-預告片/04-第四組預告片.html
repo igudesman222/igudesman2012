@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>五達悟：生計與文化之戰 - 預告片（音訊時序修正版）</title>
+  <style>
+    html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#000;color:#fff;font-family:system-ui,"Microsoft JhengHei",sans-serif}
+    #stage{position:fixed;inset:0;width:100%;height:100%;border:0;background:#000}
+    #loading{position:fixed;inset:0;z-index:20;display:flex;align-items:center;justify-content:center;text-align:center;line-height:1.8;padding:24px;background:#000;color:#e0f2fe;letter-spacing:.08em}
+  </style>
+</head>
+<body>
+  <iframe id="stage" sandbox="allow-scripts allow-same-origin allow-popups allow-pointer-lock allow-forms allow-modals" allow="autoplay; fullscreen; encrypted-media; picture-in-picture; gamepad"></iframe>
+  <div id="loading">正在載入第四組預告片音訊時序修正版……<br>主視覺影片播放期間會暫停第一大段配音與配樂。</div>
+
+  <script>
+    const SOURCE_COMMIT='39397fdbf19048312c014cfcb8165c24b6e7c3f3';
+    const RAW_BASE='https://raw.githubusercontent.com/igudesman222/-/'+SOURCE_COMMIT+'/01-%E9%A0%90%E5%91%8A%E7%89%87/';
+    const RAW_GAME_BASE='https://raw.githubusercontent.com/igudesman222/-/'+SOURCE_COMMIT+'/';
+    const ORIGINAL=RAW_BASE+'04-%E7%AC%AC%E5%9B%9B%E7%B5%84%E9%A0%90%E5%91%8A%E7%89%87.html';
+    const frame=document.getElementById('stage');
+    const loading=document.getElementById('loading');
+
+    const patchScript = `
+<script>
+(function(){
+  if(window.__group4IntroAudioFixInstalled)return;
+  window.__group4IntroAudioFixInstalled=true;
+
+  let introGuardActive=true;
+  let introReleased=false;
+  const pendingAudios=new Set();
+  const originalPlay=HTMLMediaElement.prototype.play;
+
+  function isAudio(el){return el&&el.tagName&&el.tagName.toLowerCase()==='audio';}
+  function isIntroVisible(){
+    const intro=document.getElementById('video-intro');
+    if(!intro)return introGuardActive&&!introReleased;
+    const style=getComputedStyle(intro);
+    const hidden=style.display==='none'||style.visibility==='hidden'||Number(style.opacity)===0||intro.offsetParent===null;
+    return !hidden;
+  }
+  function shouldHoldAudio(el){
+    if(!isAudio(el))return false;
+    if(el.id&&/opening|intro|visual/i.test(el.id))return false;
+    return introGuardActive && !introReleased && isIntroVisible();
+  }
+  function showAudioStatus(text){
+    let box=document.getElementById('audio-status');
+    if(!box){
+      box=document.createElement('div');
+      box.id='audio-status';
+      box.className='audio-status';
+      box.style.cssText='position:absolute;left:50%;bottom:max(18px,env(safe-area-inset-bottom));transform:translateX(-50%);z-index:3000;padding:8px 14px;border:1px solid rgba(56,189,248,.45);border-radius:999px;background:rgba(2,6,23,.72);color:#e0f2fe;font:700 12px/1.4 system-ui,"Noto Sans TC",sans-serif;letter-spacing:.08em;backdrop-filter:blur(8px);pointer-events:none;opacity:0;transition:opacity .35s ease;max-width:min(88vw,560px);text-align:center;';
+      document.body.appendChild(box);
+    }
+    box.textContent=text;
+    box.style.opacity='1';
+    clearTimeout(box.__hideTimer);
+    box.__hideTimer=setTimeout(()=>box.style.opacity='0',2600);
+  }
+
+  HTMLMediaElement.prototype.play=function patchedPlay(){
+    if(shouldHoldAudio(this)){
+      pendingAudios.add(this);
+      try{this.pause();this.currentTime=0;}catch(_){}
+      showAudioStatus('主視覺影片播放中，第一大段配音與配樂將延後啟動');
+      return Promise.resolve();
+    }
+    return originalPlay.apply(this,arguments);
+  };
+
+  function pauseEarlyAudios(){
+    if(!introGuardActive||introReleased)return;
+    document.querySelectorAll('audio').forEach(audio=>{
+      if(shouldHoldAudio(audio)){
+        pendingAudios.add(audio);
+        try{audio.pause();audio.currentTime=0;}catch(_){}
+      }
+    });
+  }
+
+  async function releaseIntroAudio(reason='intro finished'){
+    if(introReleased)return;
+    introReleased=true;
+    introGuardActive=false;
+    showAudioStatus('主視覺已結束，開始播放第一大段配音與配樂');
+    const audios=[...pendingAudios].filter(Boolean);
+    pendingAudios.clear();
+    if(!audios.length){
+      document.querySelectorAll('audio').forEach(a=>audios.push(a));
+    }
+    for(const audio of audios){
+      try{
+        audio.muted=false;
+        audio.volume=Math.max(audio.volume||0,0.8);
+        if(audio.paused){
+          const p=originalPlay.call(audio);
+          if(p&&typeof p.catch==='function')p.catch(()=>{});
+        }
+      }catch(_){}
+    }
+  }
+
+  function installIntroWatchers(){
+    const intro=document.getElementById('video-intro');
+    const introVideo=intro?intro.querySelector('video'):document.querySelector('#video-intro video');
+    pauseEarlyAudios();
+
+    if(introVideo){
+      introVideo.addEventListener('play',()=>{introGuardActive=true;introReleased=false;pauseEarlyAudios();},{capture:true});
+      introVideo.addEventListener('ended',()=>releaseIntroAudio('intro video ended'),{once:true});
+      introVideo.addEventListener('pause',()=>{setTimeout(()=>{if(!isIntroVisible())releaseIntroAudio('intro hidden after pause');},120);});
+      introVideo.addEventListener('timeupdate',()=>{pauseEarlyAudios();});
+    }
+    if(intro){
+      const obs=new MutationObserver(()=>{
+        if(!introReleased&&introGuardActive&&!isIntroVisible())releaseIntroAudio('intro hidden');
+        else pauseEarlyAudios();
+      });
+      obs.observe(intro,{attributes:true,attributeFilter:['style','class','hidden']});
+    }
+
+    // 備援：若主視覺影片時間很短但 ended 事件沒有觸發，12 秒後檢查一次。
+    setTimeout(()=>{if(!introReleased&&!isIntroVisible())releaseIntroAudio('intro fallback hidden');},12000);
+  }
+
+  document.addEventListener('DOMContentLoaded',installIntroWatchers);
+  if(document.readyState!=='loading')installIntroWatchers();
+
+  window.__releaseGroup4IntroAudio=releaseIntroAudio;
+})();
+<\/script>`;
+
+    async function boot(){
+      const html=await fetch(ORIGINAL).then(r=>{if(!r.ok)throw new Error('原始檔載入失敗 '+r.status);return r.text();});
+      let patched=html.replace('<head>','<head><base href="'+RAW_GAME_BASE+'">');
+      patched=patched.replace('</body>',patchScript+'</body>');
+      frame.srcdoc=patched;
+      frame.addEventListener('load',()=>{loading.style.display='none';},{once:true});
+    }
+    boot().catch(err=>{
+      loading.innerHTML='第四組預告片載入失敗，請重新整理。<br>'+err.message;
+    });
+  </script>
+</body>
+</html>
