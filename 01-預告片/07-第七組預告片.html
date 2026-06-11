@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>海之契約 - 第七組預告片（配音修正版）</title>
+  <style>
+    html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#010409;color:#fff;font-family:system-ui,"Microsoft JhengHei",sans-serif;overscroll-behavior:none;touch-action:manipulation}
+    #game-frame{position:fixed;inset:0;width:100%;height:100%;border:0;background:#010409}
+    #start-overlay{position:fixed;inset:0;z-index:50;display:flex;align-items:center;justify-content:center;text-align:center;padding:24px;box-sizing:border-box;background:radial-gradient(circle at 35% 30%,rgba(45,212,191,.2),transparent 35%),radial-gradient(circle at 70% 70%,rgba(14,165,233,.16),transparent 38%),rgba(1,4,9,.92);transition:opacity .55s ease,visibility .55s ease}
+    #start-overlay.hide{opacity:0;visibility:hidden;pointer-events:none}
+    .panel{width:min(760px,92vw);padding:clamp(28px,5vw,54px);border-radius:28px;border:1px solid rgba(45,212,191,.32);background:rgba(15,23,42,.78);box-shadow:0 28px 80px rgba(0,0,0,.5),inset 0 0 24px rgba(255,255,255,.04);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px)}
+    h1{margin:0 0 12px;font-size:clamp(2.4rem,8vw,5rem);letter-spacing:.16em;font-weight:900;color:#ccfbf1;text-shadow:0 0 28px rgba(45,212,191,.45)}
+    p{margin:0 auto 28px;max-width:600px;color:#cbd5e1;line-height:1.8;font-size:clamp(1rem,2.2vw,1.18rem)}
+    button{appearance:none;border:0;border-radius:999px;padding:16px 34px;font-size:1.08rem;font-weight:900;letter-spacing:.12em;color:#00110f;background:linear-gradient(135deg,#5eead4,#2dd4bf);box-shadow:0 18px 42px rgba(45,212,191,.28);cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+    button:active{transform:translateY(1px) scale(.99)}
+    #status{margin-top:18px;min-height:1.5em;color:rgba(226,232,240,.78);font-size:.9rem;letter-spacing:.06em;line-height:1.7}
+    #voice-retry{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);z-index:60;display:none;padding:12px 18px;border-radius:999px;background:rgba(45,212,191,.92);color:#00110f;font-weight:900;box-shadow:0 16px 38px rgba(45,212,191,.28)}
+    #voice-retry.show{display:block}
+  </style>
+</head>
+<body>
+  <iframe id="game-frame" sandbox="allow-scripts allow-same-origin allow-popups allow-pointer-lock allow-forms allow-modals" allow="autoplay; fullscreen; encrypted-media; picture-in-picture"></iframe>
+  <audio id="voiceover" preload="auto" playsinline></audio>
+
+  <div id="start-overlay">
+    <div class="panel">
+      <h1>海之契約</h1>
+      <p>第七組預告片配音修正版。按下按鈕後，系統會載入來源 commit 的原始預告片，並同步嘗試播放第七組配音／旁白音軌；即使 main 分支音檔曾被刪除，也會改用來源 commit 備援路徑。</p>
+      <button id="start-btn" type="button">啟用配音並播放</button>
+      <div id="status">正在載入第七組預告片與配音……</div>
+    </div>
+  </div>
+
+  <button id="voice-retry" type="button">重新啟用配音</button>
+
+  <script>
+    const SOURCE_COMMIT='39397fdbf19048312c014cfcb8165c24b6e7c3f3';
+    const ORIGINAL_HTML='https://raw.githubusercontent.com/igudesman222/-/'+SOURCE_COMMIT+'/01-%E9%A0%90%E5%91%8A%E7%89%87/07-%E7%AC%AC%E4%B8%83%E7%B5%84%E9%A0%90%E5%91%8A%E7%89%87.html';
+    const RAW_BASE='https://raw.githubusercontent.com/igudesman222/-/'+SOURCE_COMMIT+'/';
+    const MEDIA_BASE='https://media.githubusercontent.com/media/igudesman222/-/'+SOURCE_COMMIT+'/';
+    const voiceCandidates=[
+      RAW_BASE+'04-%E7%AC%AC%E5%9B%9B%E7%B5%84%E8%B3%87%E6%BA%90/04-003-%E9%9F%B3%E6%A8%82/07-%E7%91%9E%E7%A5%A5%E9%AB%98%E4%B8%AD-%E7%AC%AC%E4%B8%83%E7%B5%84%E9%85%8D%E9%9F%B3%28%E4%BF%AE%29.mp3',
+      MEDIA_BASE+'04-%E7%AC%AC%E5%9B%9B%E7%B5%84%E8%B3%87%E6%BA%90/04-003-%E9%9F%B3%E6%A8%82/07-%E7%91%9E%E7%A5%A5%E9%AB%98%E4%B8%AD-%E7%AC%AC%E4%B8%83%E7%B5%84%E9%85%8D%E9%9F%B3%28%E4%BF%AE%29.mp3',
+      RAW_BASE+'07-%E7%AC%AC%E4%B8%83%E7%B5%84%E8%B3%87%E6%BA%90/07-003-%E9%9F%B3%E6%A8%82/01-%E6%B5%B7%E9%9D%88%E7%9A%84%E6%8A%95%E5%BD%B1%28%E7%AC%AC%E4%B8%80%E5%A4%A7%E6%AE%B5%29.mp3',
+      MEDIA_BASE+'07-%E7%AC%AC%E4%B8%83%E7%B5%84%E8%B3%87%E6%BA%90/07-003-%E9%9F%B3%E6%A8%82/01-%E6%B5%B7%E9%9D%88%E7%9A%84%E6%8A%95%E5%BD%B1%28%E7%AC%AC%E4%B8%80%E5%A4%A7%E6%AE%B5%29.mp3'
+    ];
+    const bgmCandidates=[
+      RAW_BASE+'07-%E7%AC%AC%E4%B8%83%E7%B5%84%E8%B3%87%E6%BA%90/07-003-%E9%9F%B3%E6%A8%82/01-%E7%8F%8A%E7%91%9A%E5%9B%9E%E9%9F%B3%E7%A5%AD%20%28%E7%AC%AC%E4%B8%80%E5%A4%A7%E6%AE%B5%29.mp3',
+      RAW_BASE+'07-%E7%AC%AC%E4%B8%83%E7%B5%84%E8%B3%87%E6%BA%90/07-003-%E9%9F%B3%E6%A8%82/02-%E7%8F%8A%E7%91%9A%E5%9B%9E%E9%9F%B3%E7%A5%AD%28%E7%AC%AC%E4%BA%8C%E5%A4%A7%E6%AE%B5%29.mp3',
+      RAW_BASE+'07-%E7%AC%AC%E4%B8%83%E7%B5%84%E8%B3%87%E6%BA%90/07-003-%E9%9F%B3%E6%A8%82/03-%E7%8F%8A%E7%91%9A%E5%9B%9E%E9%9F%B3%E7%A5%AD%28%E7%B5%82%29.mp3'
+    ];
+    const frame=document.getElementById('game-frame');
+    const overlay=document.getElementById('start-overlay');
+    const startBtn=document.getElementById('start-btn');
+    const statusEl=document.getElementById('status');
+    const retryBtn=document.getElementById('voice-retry');
+    const parentVoice=document.getElementById('voiceover');
+    let loaded=false, started=false, voiceIndex=0;
+
+    function setStatus(msg){statusEl.textContent=msg;}
+    function escapeScript(s){return s.replace(/<\/script>/gi,'<\\/script>');}
+    function setAudioSrc(audio,index){audio.src=voiceCandidates[index];audio.preload='auto';audio.load();}
+    setAudioSrc(parentVoice,0);
+
+    async function boot(){
+      const html=await fetch(ORIGINAL_HTML).then(r=>{if(!r.ok)throw new Error('原始第七組預告片載入失敗 '+r.status);return r.text();});
+      const injection=`
+<script>
+(function(){
+  window.__group7VoiceUrls=${JSON.stringify(voiceCandidates)};
+  window.__group7BgmUrls=${JSON.stringify(bgmCandidates)};
+  window.__group7VoiceIndex=0;
+  window.__installGroup7Voice=function(){
+    let voice=document.getElementById('group7-voiceover-fixed');
+    if(!voice){voice=document.createElement('audio');voice.id='group7-voiceover-fixed';voice.preload='auto';voice.setAttribute('playsinline','');voice.style.display='none';document.body.appendChild(voice);}
+    voice.src=window.__group7VoiceUrls[window.__group7VoiceIndex]||window.__group7VoiceUrls[0];
+    voice.volume=1;voice.loop=false;
+    document.querySelectorAll('audio').forEach(a=>{if(a!==voice){try{a.volume=Math.min(a.volume||0.3,0.25);}catch(_){}}});
+    document.querySelectorAll('video').forEach(v=>{try{v.muted=false;v.volume=Math.max(v.volume||0,0.85);v.setAttribute('playsinline','');}catch(_){}});
+    return voice;
+  };
+  window.__playGroup7Voice=async function(){
+    const voice=window.__installGroup7Voice();
+    try{voice.pause();voice.currentTime=0;}catch(_){}
+    try{await voice.play();return true;}catch(e){console.warn('group7 voice failed',e);window.__group7VoiceIndex++;if(window.__group7VoiceIndex<window.__group7VoiceUrls.length){voice.src=window.__group7VoiceUrls[window.__group7VoiceIndex];voice.load();return window.__playGroup7Voice();}return false;}
+  };
+  document.addEventListener('DOMContentLoaded',window.__installGroup7Voice);
+})();
+<\/script>`;
+      let patched=html.replace('<head>','<head><base href="'+RAW_BASE+'">');
+      patched=patched.replace('</body>',injection+'</body>');
+      frame.srcdoc=patched;
+      frame.addEventListener('load',()=>{loaded=true;setStatus('第七組預告片已載入，請按下按鈕開始播放。');try{frame.contentWindow.__installGroup7Voice&&frame.contentWindow.__installGroup7Voice();}catch(_){}},{once:true});
+    }
+
+    async function playParentVoice(){
+      try{parentVoice.pause();parentVoice.currentTime=0;}catch(_){}
+      parentVoice.volume=1;
+      try{await parentVoice.play();return true;}catch(e){console.warn('parent voice failed',e);voiceIndex++;if(voiceIndex<voiceCandidates.length){setAudioSrc(parentVoice,voiceIndex);return playParentVoice();}return false;}
+    }
+    async function playInnerVoice(){
+      try{const win=frame.contentWindow;if(win&&typeof win.__playGroup7Voice==='function')return await win.__playGroup7Voice();}catch(e){console.warn('inner voice failed',e);}return false;
+    }
+    function callStart(){
+      let win,doc;try{win=frame.contentWindow;doc=frame.contentDocument;}catch(_){return;}
+      if(!win||!doc)return;
+      const fnNames=['startTrailer','startExperience','bootSequence','enterTrailer','startShow'];
+      for(const name of fnNames){try{if(typeof win[name]==='function'){win[name]();return;}}catch(e){console.warn(name,e);}}
+      const buttons=Array.from(doc.querySelectorAll('button,a,[role="button"],[onclick]'));
+      const btn=buttons.find(el=>/進入|開始|播放|啟動|潛入|START|PLAY|BOOT/i.test((el.textContent||'').trim()));
+      if(btn){try{btn.dispatchEvent(new win.PointerEvent('pointerdown',{bubbles:true,pointerType:'touch'}));}catch(_){}try{btn.dispatchEvent(new win.MouseEvent('mousedown',{bubbles:true}));}catch(_){}btn.click();}
+    }
+    async function start(){
+      if(started)return;started=true;
+      overlay.classList.add('hide');
+      setStatus('正在啟動第七組預告片與配音……');
+      callStart();
+      const innerOK=await playInnerVoice();
+      const parentOK=await playParentVoice();
+      if(innerOK||parentOK){setStatus('第七組配音已啟動。若仍聽不到，請按「重新啟用配音」。');retryBtn.classList.remove('show');}
+      else{setStatus('配音未能啟動：可能音檔來源仍不可讀，請按「重新啟用配音」再試。');retryBtn.classList.add('show');}
+      try{frame.contentWindow.focus();}catch(_){}
+    }
+    startBtn.addEventListener('click',start);
+    startBtn.addEventListener('touchend',e=>{e.preventDefault();start();},{passive:false});
+    retryBtn.addEventListener('click',async()=>{retryBtn.classList.remove('show');const ok=(await playInnerVoice())||(await playParentVoice());if(!ok)retryBtn.classList.add('show');});
+    retryBtn.addEventListener('touchend',async e=>{e.preventDefault();retryBtn.classList.remove('show');const ok=(await playInnerVoice())||(await playParentVoice());if(!ok)retryBtn.classList.add('show');},{passive:false});
+    boot().catch(err=>{setStatus('載入失敗：'+err.message);retryBtn.classList.add('show');});
+  </script>
+</body>
+</html>
