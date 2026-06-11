@@ -11,7 +11,7 @@
     #start-overlay.hide{opacity:0;visibility:hidden;pointer-events:none}
     .panel{width:min(760px,92vw);padding:clamp(28px,5vw,54px);border-radius:28px;border:1px solid rgba(125,211,252,.28);background:rgba(15,23,42,.78);box-shadow:0 28px 80px rgba(0,0,0,.48),inset 0 0 24px rgba(255,255,255,.04);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px)}
     h1{margin:0 0 12px;font-size:clamp(2.4rem,8vw,5rem);letter-spacing:.14em;font-weight:900;color:#e0f2fe;text-shadow:0 0 28px rgba(56,189,248,.42)}
-    p{margin:0 auto 28px;max-width:580px;color:#cbd5e1;line-height:1.8;font-size:clamp(1rem,2.2vw,1.18rem)}
+    p{margin:0 auto 28px;max-width:600px;color:#cbd5e1;line-height:1.8;font-size:clamp(1rem,2.2vw,1.18rem)}
     button{appearance:none;border:0;border-radius:999px;padding:16px 34px;font-size:1.08rem;font-weight:900;letter-spacing:.12em;color:#020617;background:linear-gradient(135deg,#67e8f9,#38bdf8);box-shadow:0 18px 42px rgba(14,165,233,.32);cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
     button:active{transform:translateY(1px) scale(.99)}
     #status{margin-top:18px;min-height:1.5em;color:rgba(226,232,240,.72);font-size:.9rem;letter-spacing:.06em;line-height:1.7}
@@ -27,7 +27,7 @@
   <div id="start-overlay">
     <div class="panel">
       <h1>七股風雲</h1>
-      <p>第三組互動預告片配音修正版。按下按鈕後，會同步啟動原預告片、BGM 與第三組配音音軌；手機和平板也會使用同一次點擊解除音訊限制。</p>
+      <p>第三組互動預告片配音修正版。按下按鈕後，會優先播放你指定的「03-預告片(配音)/01-配音MP3」音檔，再啟動原預告片與背景音樂。</p>
       <button id="start-btn" type="button">啟用配音並播放</button>
       <div id="status">載入預告片與配音中……</div>
     </div>
@@ -42,7 +42,11 @@
     const statusEl=document.getElementById('status');
     const parentVoice=document.getElementById('voiceover');
     const retryBtn=document.getElementById('voice-retry');
+    const SOURCE_COMMIT='39397fdbf19048312c014cfcb8165c24b6e7c3f3';
     const VOICE_URLS=[
+      '../03-預告片(配音)/01-配音MP3/03-瑞祥高中-第三組配音(修).mp3',
+      'https://raw.githubusercontent.com/igudesman222/-/'+SOURCE_COMMIT+'/03-%E9%A0%90%E5%91%8A%E7%89%87%28%E9%85%8D%E9%9F%B3%29/01-%E9%85%8D%E9%9F%B3MP3/03-%E7%91%9E%E7%A5%A5%E9%AB%98%E4%B8%AD-%E7%AC%AC%E4%B8%89%E7%B5%84%E9%85%8D%E9%9F%B3%28%E4%BF%AE%29.mp3',
+      'https://media.githubusercontent.com/media/igudesman222/-/'+SOURCE_COMMIT+'/03-%E9%A0%90%E5%91%8A%E7%89%87%28%E9%85%8D%E9%9F%B3%29/01-%E9%85%8D%E9%9F%B3MP3/03-%E7%91%9E%E7%A5%A5%E9%AB%98%E4%B8%AD-%E7%AC%AC%E4%B8%89%E7%B5%84%E9%85%8D%E9%9F%B3%28%E4%BF%AE%29.mp3',
       '../03-第三組資源/003-背景音樂/03-瑞祥高中-第三組配音(修).mp3',
       'https://raw.githubusercontent.com/igudesman222/igudesman2012/11e779ccbe2e1567b7b194b4aa1c47634652bcb7/03-%E7%AC%AC%E4%B8%89%E7%B5%84%E8%B3%87%E6%BA%90/003-%E8%83%8C%E6%99%AF%E9%9F%B3%E6%A8%82/03-%E7%91%9E%E7%A5%A5%E9%AB%98%E4%B8%AD-%E7%AC%AC%E4%B8%89%E7%B5%84%E9%85%8D%E9%9F%B3%28%E4%BF%AE%29.mp3',
       'https://media.githubusercontent.com/media/igudesman222/igudesman2012/11e779ccbe2e1567b7b194b4aa1c47634652bcb7/03-%E7%AC%AC%E4%B8%89%E7%B5%84%E8%B3%87%E6%BA%90/003-%E8%83%8C%E6%99%AF%E9%9F%B3%E6%A8%82/03-%E7%91%9E%E7%A5%A5%E9%AB%98%E4%B8%AD-%E7%AC%AC%E4%B8%89%E7%B5%84%E9%85%8D%E9%9F%B3%28%E4%BF%AE%29.mp3'
@@ -59,7 +63,6 @@
       let doc,win;
       try{doc=frame.contentDocument;win=frame.contentWindow;}catch(_){return null;}
       if(!doc||!win)return null;
-
       let audio=doc.getElementById('group3-voiceover-fixed');
       if(!audio){
         audio=doc.createElement('audio');
@@ -74,18 +77,53 @@
       audio.loop=false;
       try{audio.currentTime=0;}catch(_){ }
 
-      // 壓低原 BGM，避免配音被蓋掉；影片仍保留聲音。
-      doc.querySelectorAll('audio').forEach(a=>{ if(a!==audio){ try{a.volume=Math.min(a.volume||0.35,.28);}catch(_){ } } });
+      // 讓內層原本 BGM 不要蓋過配音。
+      doc.querySelectorAll('audio').forEach(a=>{ if(a!==audio){ try{a.volume=Math.min(a.volume||0.32,.22);}catch(_){ } } });
       doc.querySelectorAll('video').forEach(v=>{ try{v.muted=false;v.volume=Math.max(v.volume||0,0.85);v.setAttribute('playsinline','');}catch(_){ } });
       return audio;
+    }
+
+    function testLoad(audio,label){
+      return new Promise(resolve=>{
+        let done=false;
+        const cleanup=()=>{audio.removeEventListener('canplaythrough',ok);audio.removeEventListener('canplay',ok);audio.removeEventListener('loadeddata',ok);audio.removeEventListener('error',bad);clearTimeout(timer);};
+        const ok=()=>{if(done)return;done=true;cleanup();resolve(true);};
+        const bad=()=>{if(done)return;done=true;cleanup();console.warn(label+' load failed:',audio.error);resolve(false);};
+        const timer=setTimeout(()=>{if(done)return;done=true;cleanup();resolve(true);},2400);
+        audio.addEventListener('canplaythrough',ok,{once:true});
+        audio.addEventListener('canplay',ok,{once:true});
+        audio.addEventListener('loadeddata',ok,{once:true});
+        audio.addEventListener('error',bad,{once:true});
+        try{audio.load();}catch(_){resolve(false);}
+      });
+    }
+
+    async function prepareVoiceSource(){
+      for(let i=voiceIndex;i<VOICE_URLS.length;i++){
+        voiceIndex=i;
+        setAudioSrc(parentVoice,i);
+        innerVoice=installInnerVoice();
+        if(innerVoice){innerVoice.src=VOICE_URLS[i];innerVoice.load();}
+        setStatus('正在測試配音來源 '+(i+1)+' / '+VOICE_URLS.length+' ……');
+        const ok=await testLoad(parentVoice,'parent voice');
+        if(ok){
+          setStatus('配音音檔已載入，請按下按鈕開始播放。');
+          return true;
+        }
+      }
+      setStatus('配音音檔載入失敗：目前所有路徑都無法讀取。');
+      retryBtn.classList.add('show');
+      return false;
     }
 
     async function playAudioElement(audio,label){
       if(!audio)return false;
       try{audio.pause();audio.currentTime=0;}catch(_){ }
       audio.volume=1;
+      audio.muted=false;
       try{
         await audio.play();
+        console.log(label+' playing:',audio.src);
         return true;
       }catch(err){
         console.warn(label+' play failed:',err);
@@ -96,17 +134,18 @@
     async function playVoice(){
       retryBtn.classList.remove('show');
       innerVoice=installInnerVoice();
-      const innerOK=await playAudioElement(innerVoice,'inner voice');
-      const parentOK=await playAudioElement(parentVoice,'parent voice');
-      if(innerOK||parentOK){
-        setStatus('配音已啟動。若覺得 BGM 太大聲，請再按一次「重新啟用配音」。');
+      // 先播放父層 audio，因為這一層最直接吃得到使用者點擊手勢。
+      let parentOK=await playAudioElement(parentVoice,'parent voice');
+      let innerOK=await playAudioElement(innerVoice,'inner voice');
+      if(parentOK||innerOK){
+        setStatus('配音已啟動：'+decodeURIComponent((VOICE_URLS[voiceIndex]||'').split('/').pop()));
         return true;
       }
       voiceIndex++;
       if(voiceIndex<VOICE_URLS.length){
         setAudioSrc(parentVoice,voiceIndex);
         if(innerVoice){innerVoice.src=VOICE_URLS[voiceIndex];innerVoice.load();}
-        setStatus('第一個配音來源無法播放，正在切換備援音檔來源……');
+        setStatus('目前配音來源被阻擋或不可播放，正在切換備援來源……');
         return playVoice();
       }
       retryBtn.classList.add('show');
@@ -131,24 +170,28 @@
     async function startExperience(){
       if(started)return;
       started=true;
-      overlay.classList.add('hide');
-      setStatus('正在啟動預告片與配音……');
+      setStatus('正在啟動配音……');
       installInnerVoice();
-      callTrailerStart();
+      // 關鍵：先在使用者點擊事件中啟動 voiceover，再啟動內層預告片，避免手機瀏覽器擋聲音。
       await playVoice();
+      overlay.classList.add('hide');
+      callTrailerStart();
+      setTimeout(()=>playVoice(),450);
       try{frame.contentWindow.focus();}catch(_){ }
     }
 
     frame.addEventListener('load',()=>{
-      setStatus('預告片已載入，請按下按鈕開始播放。');
+      setStatus('預告片已載入，正在確認配音音檔……');
       installInnerVoice();
+      prepareVoiceSource();
     });
     startBtn.addEventListener('click',startExperience);
     startBtn.addEventListener('touchend',e=>{e.preventDefault();startExperience();},{passive:false});
     retryBtn.addEventListener('click',()=>playVoice());
     retryBtn.addEventListener('touchend',e=>{e.preventDefault();playVoice();},{passive:false});
     parentVoice.addEventListener('error',()=>{
-      if(voiceIndex<VOICE_URLS.length-1){voiceIndex++;setAudioSrc(parentVoice,voiceIndex);}
+      console.warn('parent voice error',parentVoice.error,parentVoice.src);
+      if(voiceIndex<VOICE_URLS.length-1){voiceIndex++;setAudioSrc(parentVoice,voiceIndex);prepareVoiceSource();}
       else{retryBtn.classList.add('show');setStatus('配音音檔載入失敗，已嘗試所有備援來源。');}
     });
     window.addEventListener('keydown',event=>{if(!started&&(event.key==='Enter'||event.key===' ')){event.preventDefault();startExperience();}});
