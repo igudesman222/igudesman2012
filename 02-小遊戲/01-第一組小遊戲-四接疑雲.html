@@ -1,0 +1,726 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>綠電與海洋的抉擇：四接疑雲</title>
+    <style>
+        :root {
+            --ui-cyan: #22d3ee;
+            --ui-red: #f43f5e;
+            --ui-gold: #fbbf24;
+            --bg-blur: rgba(15, 23, 42, 0.85);
+        }
+
+        body, html { margin: 0; padding: 0; height: 100%; background: #000; color: #fff; font-family: "PingFang TC", "Microsoft JhengHei", sans-serif; overflow: hidden; }
+
+        /* 頂部數據儀 */
+        #hud-top {
+            position: absolute;
+            top: 20px; left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 15px;
+            z-index: 100;
+            pointer-events: none;
+        }
+
+        .meter-box {
+            background: var(--bg-blur);
+            border: 2px solid rgba(255,255,255,0.1);
+            padding: 8px 15px;
+            border-radius: 4px;
+            min-width: 120px;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            backdrop-filter: blur(4px);
+        }
+
+        .meter-label { font-size: 11px; color: #94a3b8; margin-bottom: 2px; text-transform: uppercase; }
+        .meter-val { font-size: 20px; font-weight: 800; font-family: 'Courier New', monospace; }
+
+        /* 噴射條 */
+        #boost-container {
+            position: absolute;
+            bottom: 120px; left: 50%;
+            transform: translateX(-50%);
+            width: 200px; height: 6px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 3px;
+            overflow: hidden;
+            display: none;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+        #boost-fill { width: 100%; height: 100%; background: var(--ui-cyan); transition: width 0.1s; box-shadow: 0 0 10px var(--ui-cyan); }
+
+        /* 立場分析儀 */
+        #stance-panel {
+            position: absolute;
+            left: 20px; top: 20px;
+            width: 180px;
+            background: var(--bg-blur);
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid var(--ui-cyan);
+            backdrop-filter: blur(4px);
+        }
+        .stance-row { margin-bottom: 10px; }
+        .s-label { font-size: 11px; color: #94a3b8; display: flex; justify-content: space-between; }
+        .s-bar { height: 4px; background: #334155; margin-top: 4px; border-radius: 2px; overflow: hidden; }
+        .s-fill { height: 100%; width: 50%; transition: 0.5s; }
+
+        /* 對話窗口 */
+        #dialog-box {
+            position: absolute;
+            bottom: 30px; left: 50%;
+            transform: translateX(-50%);
+            width: 90%; max-width: 700px;
+            background: var(--bg-blur);
+            border: 1px solid var(--ui-cyan);
+            border-radius: 8px;
+            padding: 25px;
+            display: none;
+            z-index: 1000;
+            box-shadow: 0 0 30px rgba(34, 211, 238, 0.2);
+        }
+        .choice-btn {
+            background: rgba(34, 211, 238, 0.1);
+            border: 1px solid var(--ui-cyan);
+            color: white;
+            padding: 12px 15px;
+            margin-top: 10px;
+            width: 100%;
+            text-align: left;
+            cursor: pointer;
+            transition: 0.2s;
+            border-radius: 4px;
+        }
+        .choice-btn:hover { background: var(--ui-cyan); color: #000; font-weight: bold; }
+
+        .choice-btn, #btn-start, .touch-btn {
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* 手機 / 平板觸控操作介面 */
+        #mobile-controls {
+            position: fixed;
+            inset: 0;
+            z-index: 900;
+            pointer-events: none;
+            display: none;
+        }
+        #joy-zone {
+            position: absolute;
+            left: 22px;
+            bottom: 28px;
+            width: 132px;
+            height: 132px;
+            border-radius: 999px;
+            background: rgba(15, 23, 42, 0.42);
+            border: 1px solid rgba(34, 211, 238, 0.45);
+            box-shadow: 0 0 24px rgba(34, 211, 238, 0.18);
+            backdrop-filter: blur(8px);
+            pointer-events: auto;
+            touch-action: none;
+        }
+        #joy-knob {
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            width: 54px;
+            height: 54px;
+            border-radius: 999px;
+            transform: translate(-50%, -50%);
+            background: rgba(34, 211, 238, 0.9);
+            box-shadow: 0 0 18px rgba(34, 211, 238, 0.7);
+        }
+        #touch-actions {
+            position: absolute;
+            right: 22px;
+            bottom: 32px;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            pointer-events: auto;
+        }
+        .touch-btn {
+            width: 86px;
+            height: 58px;
+            border-radius: 18px;
+            border: 1px solid rgba(255,255,255,0.25);
+            color: #fff;
+            font-weight: 900;
+            letter-spacing: 0.08em;
+            background: rgba(15, 23, 42, 0.72);
+            box-shadow: 0 10px 28px rgba(0,0,0,0.35);
+            backdrop-filter: blur(8px);
+        }
+        .touch-btn:active, .touch-btn.active {
+            background: var(--ui-cyan);
+            color: #020617;
+            transform: translateY(1px) scale(0.98);
+        }
+        #touch-interact {
+            border-color: rgba(251, 191, 36, 0.75);
+        }
+        #touch-boost {
+            border-color: rgba(34, 211, 238, 0.75);
+        }
+
+        @media (hover: none), (pointer: coarse), (max-width: 900px) {
+            #mobile-controls { display: block; }
+            #hud-top {
+                top: 10px;
+                gap: 6px;
+                width: min(96vw, 520px);
+                justify-content: center;
+            }
+            .meter-box {
+                min-width: 0;
+                flex: 1;
+                padding: 6px 8px;
+            }
+            .meter-label { font-size: 10px; }
+            .meter-val { font-size: 16px; }
+            #stance-panel {
+                top: 72px;
+                left: 10px;
+                width: 145px;
+                padding: 10px;
+                font-size: 12px;
+            }
+            #dialog-box {
+                bottom: 178px;
+                width: calc(100% - 36px);
+                padding: 16px;
+                max-height: 48vh;
+                overflow: auto;
+            }
+            #hint-text {
+                bottom: 178px;
+                width: 90%;
+                text-align: center;
+                font-size: 15px;
+            }
+            #boost-container {
+                bottom: 172px;
+                width: 150px;
+            }
+            #intro {
+                padding: 24px;
+                box-sizing: border-box;
+            }
+            #intro h1 {
+                font-size: clamp(1.8rem, 8vw, 3rem);
+                text-align: center;
+            }
+        }
+
+        /* 提示資訊 */
+        #hint-text {
+            position: absolute;
+            bottom: 150px; left: 50%;
+            transform: translateX(-50%);
+            color: var(--ui-cyan);
+            text-shadow: 0 0 10px #000;
+            font-weight: bold;
+            pointer-events: none;
+            font-size: 18px;
+        }
+
+        #intro {
+            position: fixed; inset: 0; background: radial-gradient(circle, #0f172a 0%, #000 100%); z-index: 2000;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+        }
+        
+        #btn-start {
+            padding: 15px 50px; font-size: 18px; background: transparent;
+            border: 2px solid var(--ui-cyan); color: var(--ui-cyan);
+            cursor: pointer; margin-top: 30px; letter-spacing: 4px;
+            transition: 0.3s;
+        }
+        #btn-start:hover { background: var(--ui-cyan); color: #000; box-shadow: 0 0 20px var(--ui-cyan); }
+    </style>
+</head>
+<body>
+
+<!-- 音樂元件 -->
+<audio id="bgm-p1" loop preload="auto"><source src="https://suno.com/song/107e7f26-bb9a-426b-a14a-dbe6fc780b69" type="audio/mpeg"></audio>
+<audio id="bgm-p2" loop preload="auto"><source src="https://suno.com/song/474d5fcd-c8b2-420f-89a4-657c670b408a" type="audio/mpeg"></audio>
+<audio id="bgm-p3" loop preload="auto"><source src="https://suno.com/song/40da9f03-6ee2-4b9b-a394-d560510f339f" type="audio/mpeg"></audio>
+
+<div id="intro">
+    <h1 style="color: var(--ui-cyan); letter-spacing: 8px; text-shadow: 0 0 20px rgba(34,211,238,0.5);">綠電與海洋的抉擇：四接疑雲</h1>
+    <p style="color: #94a3b8; text-align: center; max-width: 600px; line-height: 1.6;">
+        操作說明：<br>
+        電腦：[WASD] 移動潛水艇｜[Shift] 噴射加速｜[Space] 互動<br>
+        手機／平板：左下角虛擬搖桿移動，右下角按鈕加速與互動<br><br>
+        <span style="color: var(--ui-cyan)">※ 啟動後將開啟環境音效與背景音樂</span>
+    </p>
+    <button id="btn-start" onclick="initGame()">啟動潛航系統</button>
+</div>
+
+<div id="hud-top">
+    <div class="meter-box">
+        <div class="meter-label">生態完整度</div>
+        <div id="val-eco" class="meter-val" style="color: #4ade80;">100</div>
+    </div>
+    <div class="meter-box">
+        <div class="meter-label">開發進度</div>
+        <div id="val-prog" class="meter-val" style="color: var(--ui-gold);">0%</div>
+    </div>
+    <div class="meter-box">
+        <div class="meter-label">能源缺口</div>
+        <div id="val-energy" class="meter-val" style="color: #f87171;">危急</div>
+    </div>
+</div>
+
+<div id="stance-panel">
+    <div class="stance-row">
+        <div class="s-label"><span>能源商</span><span id="txt-corp">10</span></div>
+        <div class="s-bar"><div id="bar-corp" class="s-fill" style="background: var(--ui-gold); width: 10%;"></div></div>
+    </div>
+    <div class="stance-row">
+        <div class="s-label"><span>環團/漁民</span><span id="txt-green">10</span></div>
+        <div class="s-bar"><div id="bar-green" class="s-fill" style="background: var(--ui-cyan); width: 10%;"></div></div>
+    </div>
+</div>
+
+<div id="boost-container"><div id="boost-fill"></div></div>
+<div id="hint-text"></div>
+
+<div id="mobile-controls" aria-label="手機和平板觸控操作介面">
+    <div id="joy-zone" aria-label="方向搖桿"><div id="joy-knob"></div></div>
+    <div id="touch-actions">
+        <button id="touch-interact" class="touch-btn" type="button">互動</button>
+        <button id="touch-boost" class="touch-btn" type="button">加速</button>
+    </div>
+</div>
+
+<div id="dialog-box">
+    <div id="d-speaker" style="color: var(--ui-cyan); font-weight: bold; margin-bottom: 8px; font-size: 18px;"></div>
+    <div id="d-content" style="font-size: 16px; margin-bottom: 20px; line-height: 1.5; color: #e2e8f0;"></div>
+    <div id="d-choices"></div>
+</div>
+
+<script type="importmap">
+    { "imports": { "three": "https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.module.min.js" } }
+</script>
+
+<script type="module">
+    import * as THREE from 'three';
+
+    // 避免手機遊玩時頁面被拖曳、雙指縮放或長按選字干擾
+    document.addEventListener('touchmove', (e) => e.preventDefault(), { passive: false });
+
+    // --- 遊戲邏輯變數 ---
+    const game = {
+        eco: 100,
+        prog: 0,
+        corp: 10,
+        green: 10,
+        isBoosting: false,
+        energy: 100,
+        phase: 0,
+        activeBgm: null
+    };
+
+    // --- 3D 場景變數 ---
+    let scene, camera, renderer, player, clock;
+    let corals = [], pois = [], moveDir = {x:0, z:0};
+
+    // 音樂控制
+    function playMusic(id) {
+        if (game.activeBgm) {
+            const oldBgm = document.getElementById(game.activeBgm);
+            // 漸淡效果（簡單模擬）
+            let vol = 1.0;
+            const fade = setInterval(() => {
+                vol -= 0.1;
+                if (vol <= 0) {
+                    oldBgm.pause();
+                    clearInterval(fade);
+                } else {
+                    oldBgm.volume = vol;
+                }
+            }, 100);
+        }
+        
+        const newBgm = document.getElementById(id);
+        newBgm.volume = 0;
+        newBgm.play().catch(e => console.log("Audio play failed or source is unavailable, wait for user interaction", e));
+        game.activeBgm = id;
+        
+        // 漸入效果
+        let volIn = 0;
+        const fadeIn = setInterval(() => {
+            volIn += 0.1;
+            if (volIn >= 0.7) {
+                newBgm.volume = 0.7;
+                clearInterval(fadeIn);
+            } else {
+                newBgm.volume = volIn;
+            }
+        }, 100);
+    }
+
+    window.initGame = () => {
+        document.getElementById('intro').style.display = 'none';
+        document.getElementById('boost-container').style.display = 'block';
+        
+        // 啟動第一階段音樂
+        playMusic('bgm-p1');
+        
+        scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x050b18); 
+        scene.fog = new THREE.FogExp2(0x050b18, 0.04);
+
+        camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
+        renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.domElement.style.touchAction = 'none';
+        renderer.domElement.style.webkitTapHighlightColor = 'transparent';
+        document.body.appendChild(renderer.domElement);
+
+        // 光影增強
+        const amb = new THREE.AmbientLight(0x404040, 1.5);
+        scene.add(amb);
+        
+        // 潛水艇主體
+        const playerGroup = new THREE.Group();
+        const bodyMat = new THREE.MeshStandardMaterial({color: 0x22d3ee, emissive: 0x0ea5e9, emissiveIntensity: 0.8, metalness: 0.7, roughness: 0.2});
+        
+        const mainBody = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.4, 1.2, 16), bodyMat);
+        mainBody.rotation.z = Math.PI / 2;
+        playerGroup.add(mainBody);
+        
+        const cap1 = new THREE.Mesh(new THREE.SphereGeometry(0.4, 16, 16), bodyMat);
+        cap1.position.x = 0.6;
+        playerGroup.add(cap1);
+        
+        const cap2 = new THREE.Mesh(new THREE.SphereGeometry(0.4, 16, 16), bodyMat);
+        cap2.position.x = -0.6;
+        playerGroup.add(cap2);
+
+        // 前置探照燈
+        const headLight = new THREE.SpotLight(0xffffff, 8, 40, 0.4, 0.3);
+        headLight.position.set(0.6, 0, 0);
+        const lightTarget = new THREE.Object3D();
+        lightTarget.position.set(10, 0, 0);
+        playerGroup.add(lightTarget);
+        headLight.target = lightTarget;
+        playerGroup.add(headLight);
+        
+        player = playerGroup;
+        player.position.y = 2;
+        scene.add(player);
+
+        createEnvironment();
+        setupControls();
+        clock = new THREE.Clock();
+        animate();
+
+        triggerDialog('核心系統', '探勘員，潛航系統已就緒。你現在聽到的是當地的環境基底聲脈「海底壓痕」。請前往標記點調查四接工程對生態與能源的影響。', [
+            {text: '了解，保持通訊。', action: () => {}}
+        ]);
+    };
+
+    function createEnvironment() {
+        const groundGeo = new THREE.PlaneGeometry(300, 300);
+        const groundMat = new THREE.MeshStandardMaterial({color: 0x111827, roughness: 0.8, metalness: 0.2});
+        const ground = new THREE.Mesh(groundGeo, groundMat);
+        ground.rotation.x = -Math.PI / 2;
+        scene.add(ground);
+
+        for(let i=0; i<200; i++) {
+            const x = Math.random()*180 - 90;
+            const z = Math.random()*180 - 90;
+            if (Math.abs(x) < 5 && Math.abs(z) < 5) continue; 
+
+            const isAlive = Math.random() > 0.2;
+            const h = 0.4 + Math.random() * 0.8;
+            const color = isAlive ? new THREE.Color().setHSL(Math.random()*0.1, 0.8, 0.5) : new THREE.Color(0x94a3b8);
+            
+            const coral = new THREE.Mesh(
+                new THREE.ConeGeometry(0.15, h, 5),
+                new THREE.MeshStandardMaterial({
+                    color: color,
+                    emissive: isAlive ? color : 0x000000,
+                    emissiveIntensity: 0.6
+                })
+            );
+            coral.position.set(x, h/2, z);
+            scene.add(coral);
+            corals.push({mesh: coral, alive: isAlive});
+        }
+
+        addPOI("能源商：工程選址點", 25, 25, 'CORP_NODE');
+        addPOI("環境巡守隊：生態保護區", -30, -20, 'FISH_NODE');
+        addPOI("能源商：管線規劃區", 0, -40, 'CORP_NODE_2');
+    }
+
+    function addPOI(name, x, z, id) {
+        const poiGroup = new THREE.Group();
+        const poiGeo = new THREE.TorusGeometry(1.5, 0.15, 16, 32);
+        const poiMat = new THREE.MeshBasicMaterial({color: 0xfbbf24, transparent: true, opacity: 0.7});
+        const ring = new THREE.Mesh(poiGeo, poiMat);
+        ring.rotation.x = Math.PI / 2;
+        poiGroup.add(ring);
+        
+        const core = new THREE.Mesh(new THREE.SphereGeometry(0.3, 8, 8), new THREE.MeshBasicMaterial({color: 0xfbbf24}));
+        core.position.y = 0.5;
+        poiGroup.add(core);
+
+        poiGroup.position.set(x, 0.2, z);
+        scene.add(poiGroup);
+        pois.push({mesh: poiGroup, name, id});
+    }
+
+    function setupControls() {
+        window.addEventListener('keydown', (e) => {
+            if(e.code === 'KeyW') moveDir.z = 1;
+            if(e.code === 'KeyS') moveDir.z = -1;
+            if(e.code === 'KeyA') moveDir.x = -1;
+            if(e.code === 'KeyD') moveDir.x = 1;
+            if(e.code === 'ShiftLeft') game.isBoosting = true;
+            if(e.code === 'Space') {
+                e.preventDefault();
+                interact();
+            }
+        });
+        window.addEventListener('keyup', (e) => {
+            if(e.code === 'KeyW' || e.code === 'KeyS') moveDir.z = 0;
+            if(e.code === 'KeyA' || e.code === 'KeyD') moveDir.x = 0;
+            if(e.code === 'ShiftLeft') game.isBoosting = false;
+        });
+
+        setupTouchControls();
+
+        window.addEventListener('resize', () => {
+            if (!camera || !renderer) return;
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+    }
+
+    function setupTouchControls() {
+        const joyZone = document.getElementById('joy-zone');
+        const joyKnob = document.getElementById('joy-knob');
+        const boostBtn = document.getElementById('touch-boost');
+        const interactBtn = document.getElementById('touch-interact');
+        if (!joyZone || !joyKnob || !boostBtn || !interactBtn) return;
+
+        const resetJoystick = () => {
+            moveDir.x = 0;
+            moveDir.z = 0;
+            joyKnob.style.transform = 'translate(-50%, -50%)';
+        };
+
+        const updateJoystick = (clientX, clientY) => {
+            const rect = joyZone.getBoundingClientRect();
+            const cx = rect.left + rect.width / 2;
+            const cy = rect.top + rect.height / 2;
+            const max = rect.width * 0.34;
+            let dx = clientX - cx;
+            let dy = clientY - cy;
+            const dist = Math.hypot(dx, dy);
+            if (dist > max) {
+                dx = dx / dist * max;
+                dy = dy / dist * max;
+            }
+            joyKnob.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
+
+            const dead = 0.12;
+            const nx = dx / max;
+            const ny = dy / max;
+            moveDir.x = Math.abs(nx) < dead ? 0 : nx;
+            // 原本 W 是往畫面前方移動，因此上推搖桿要等於 moveDir.z = 1
+            moveDir.z = Math.abs(ny) < dead ? 0 : -ny;
+        };
+
+        joyZone.addEventListener('pointerdown', (e) => {
+            e.preventDefault();
+            joyZone.setPointerCapture(e.pointerId);
+            updateJoystick(e.clientX, e.clientY);
+        }, { passive: false });
+        joyZone.addEventListener('pointermove', (e) => {
+            if (!joyZone.hasPointerCapture(e.pointerId)) return;
+            e.preventDefault();
+            updateJoystick(e.clientX, e.clientY);
+        }, { passive: false });
+        const stopJoy = (e) => {
+            try { joyZone.releasePointerCapture(e.pointerId); } catch (_) {}
+            resetJoystick();
+        };
+        joyZone.addEventListener('pointerup', stopJoy);
+        joyZone.addEventListener('pointercancel', stopJoy);
+        joyZone.addEventListener('lostpointercapture', resetJoystick);
+
+        boostBtn.addEventListener('pointerdown', (e) => {
+            e.preventDefault();
+            game.isBoosting = true;
+            boostBtn.classList.add('active');
+        }, { passive: false });
+        const stopBoost = (e) => {
+            e.preventDefault();
+            game.isBoosting = false;
+            boostBtn.classList.remove('active');
+        };
+        boostBtn.addEventListener('pointerup', stopBoost);
+        boostBtn.addEventListener('pointercancel', stopBoost);
+        boostBtn.addEventListener('pointerleave', stopBoost);
+
+        interactBtn.addEventListener('pointerdown', (e) => {
+            e.preventDefault();
+            interact();
+            interactBtn.classList.add('active');
+            setTimeout(() => interactBtn.classList.remove('active'), 160);
+        }, { passive: false });
+    }
+
+    function interact() {
+        if(document.getElementById('dialog-box').style.display === 'block') return;
+
+        pois.forEach(p => {
+            if(player.position.distanceTo(p.mesh.position) < 4) {
+                if(p.id === 'CORP_NODE') {
+                    triggerDialog('開發商代表', '這裡是四接最理想的接收站位置。雖然施工會覆蓋部分藻礁，但能提供北部 20% 的電力缺口。你支持在這個座標佈署鑽探儀嗎？', [
+                        {text: '支持開發：優先解決能源缺口 (進度+25, 生態-20)', action: () => updateStats(25, -20, 40, -30)},
+                        {text: '反對：藻礁不可復原 (環團信任+20)', action: () => updateStats(0, 0, -20, 20)}
+                    ]);
+                } else if(p.id === 'FISH_NODE') {
+                    triggerDialog('資深漁民', '後生仔，這底下的水流會說話。一旦蓋了港口，海流就全亂了。請幫我們提交調查，延緩施工。', [
+                        {text: '提交調查：守護海洋多樣性 (生態+15, 進度-10)', action: () => updateStats(-10, 15, -30, 40)},
+                        {text: '忽視請求：工程必須按期進行', action: () => updateStats(10, -5, 20, -20)}
+                    ]);
+                } else if(p.id === 'CORP_NODE_2') {
+                    triggerDialog('能源政策顧問', '北部備轉容量持續探底。如果不加速四接管線，今年夏天可能有停電風險。', [
+                        {text: '同意浚挖：確保民生用電安全 (進度+20, 生態-15)', action: () => updateStats(20, -15, 30, -20)},
+                        {text: '尋找替代路徑：雖然耗時但傷害較小 (進度+5, 生態-2)', action: () => updateStats(5, -2, 0, 10)}
+                    ]);
+                }
+            }
+        });
+    }
+
+    function triggerDialog(speaker, content, choices = [{text: '繼續', action: () => {}}]) {
+        const box = document.getElementById('dialog-box');
+        document.getElementById('d-speaker').innerText = speaker;
+        document.getElementById('d-content').innerText = content;
+        const cBox = document.getElementById('d-choices');
+        cBox.innerHTML = '';
+        choices.forEach(c => {
+            const btn = document.createElement('button');
+            btn.className = 'choice-btn';
+            btn.innerText = c.text;
+            const choose = () => {
+                c.action();
+                box.style.display = 'none';
+            };
+            btn.onclick = choose;
+            btn.addEventListener('pointerdown', (e) => {
+                e.preventDefault();
+                choose();
+            }, { passive: false });
+            cBox.appendChild(btn);
+        });
+        box.style.display = 'block';
+    }
+
+    function updateStats(p, e, c, g) {
+        game.prog = Math.min(100, Math.max(0, game.prog + p));
+        game.eco = Math.min(100, Math.max(0, game.eco + e));
+        game.corp = Math.min(100, Math.max(0, game.corp + c));
+        game.green = Math.min(100, Math.max(0, game.green + g));
+        
+        document.getElementById('val-prog').innerText = game.prog + '%';
+        document.getElementById('val-eco').innerText = game.eco;
+        document.getElementById('val-eco').style.color = game.eco < 50 ? 'var(--ui-red)' : '#4ade80';
+        
+        document.getElementById('bar-corp').style.width = game.corp + '%';
+        document.getElementById('bar-green').style.width = game.green + '%';
+        
+        const energyText = document.getElementById('val-energy');
+        if(game.prog > 70) {
+            energyText.innerText = "穩定";
+            energyText.style.color = "#4ade80";
+        } else if(game.prog > 30) {
+            energyText.innerText = "中度";
+            energyText.style.color = "var(--ui-gold)";
+        } else {
+            energyText.innerText = "危急";
+            energyText.style.color = "var(--ui-red)";
+        }
+        
+        checkPhase();
+    }
+
+    function checkPhase() {
+        // 音樂切換與階段邏輯
+        if(game.eco < 70 && game.phase === 0) {
+            game.phase = 1;
+            playMusic('bgm-p2'); // 切換到「狹縫奔逃」
+            scene.background.set(0x161d33);
+            scene.fog.color.set(0x161d33);
+            triggerDialog('系統通知', '環境警告：隨著工程介入，音樂轉向焦躁的「狹縫奔逃」。海底濁度顯著上升，珊瑚礁出現壓力反應。');
+        } else if(game.eco < 35 && game.phase === 1) {
+            game.phase = 2;
+            playMusic('bgm-p3'); // 切換到「破曉回聲」
+            scene.background.set(0x2d1b2d); 
+            scene.fog.color.set(0x2d1b2d);
+            triggerDialog('緊急預警', '白化危機：進入「破曉回聲」。大規模珊瑚礁已停止生長，這是海洋寂靜的控訴。');
+            corals.forEach(c => { if(c.alive) c.mesh.material.color.set(0xf1f5f9); });
+        }
+    }
+
+    function animate() {
+        requestAnimationFrame(animate);
+        const dt = clock.getDelta();
+
+        if(document.getElementById('dialog-box').style.display !== 'block') {
+            const speed = game.isBoosting ? 22 : 12;
+            player.position.x += moveDir.x * speed * dt;
+            player.position.z -= moveDir.z * speed * dt;
+
+            if(Math.abs(moveDir.x) > 0.1 || Math.abs(moveDir.z) > 0.1) {
+                const targetRotation = Math.atan2(moveDir.x, moveDir.z);
+                player.rotation.y = THREE.MathUtils.lerp(player.rotation.y, targetRotation, 0.15);
+            }
+
+            document.getElementById('boost-fill').style.width = game.isBoosting ? '100%' : '50%';
+            
+            if(game.isBoosting) {
+                corals.forEach(c => {
+                    if(c.alive && player.position.distanceTo(c.mesh.position) < 2.5) {
+                        c.alive = false;
+                        c.mesh.material.color.set(0x475569);
+                        c.mesh.material.emissiveIntensity = 0;
+                        updateStats(0, -0.3, 0, 0); 
+                    }
+                });
+            }
+
+            let near = false;
+            pois.forEach(p => {
+                const dist = player.position.distanceTo(p.mesh.position);
+                p.mesh.rotation.y += 0.02;
+                if(dist < 5) {
+                    document.getElementById('hint-text').innerText = `靠近目標：按互動鍵 / Space - ${p.name}`;
+                    near = true;
+                }
+            });
+            if(!near) document.getElementById('hint-text').innerText = '';
+
+            const camTarget = new THREE.Vector3(player.position.x, 18, player.position.z + 14);
+            camera.position.lerp(camTarget, 0.08);
+            camera.lookAt(player.position.x, 0, player.position.z);
+        }
+
+        renderer.render(scene, camera);
+    }
+</script>
+</body>
+</html>
