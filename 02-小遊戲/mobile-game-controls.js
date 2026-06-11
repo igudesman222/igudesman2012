@@ -15,7 +15,9 @@
     .mgc-btn:active, .mgc-btn.active { background: #22d3ee; color: #020617; transform: translateY(1px) scale(.98); }
     .mgc-btn.attack { grid-column: span 2; width: 168px; height: 64px; border-color: rgba(244,63,94,.72); font-size: 1rem; background: rgba(127,29,29,.78); }
     .mgc-hint { position: absolute; left: 50%; bottom: max(170px, calc(env(safe-area-inset-bottom) + 170px)); transform: translateX(-50%); padding: 7px 12px; border-radius: 999px; background: rgba(2,6,23,.62); color: rgba(226,232,240,.82); font-size: 12px; letter-spacing: .08em; pointer-events: none; white-space: nowrap; }
-    @media (hover: hover) and (pointer: fine) { .mgc-root { display: none; } }
+    .mgc-tap-marker { position: fixed; width: 44px; height: 44px; border-radius: 999px; border: 2px solid rgba(34,211,238,.92); background: rgba(34,211,238,.12); transform: translate(-50%,-50%); pointer-events: none; z-index: 2147482999; box-shadow: 0 0 24px rgba(34,211,238,.55); opacity: 0; transition: opacity .12s ease, transform .12s ease; }
+    .mgc-tap-marker.show { opacity: 1; transform: translate(-50%,-50%) scale(1.05); }
+    @media (hover: hover) and (pointer: fine) { .mgc-root { display: none; } .mgc-tap-marker { display: none; } }
     @media (max-width: 520px) { .mgc-pad { width: 124px; height: 124px; } .mgc-knob { width: 50px; height: 50px; } .mgc-actions { grid-template-columns: 70px 70px; gap: 10px; } .mgc-btn { width: 70px; height: 54px; font-size: .82rem; } .mgc-btn.attack { width: 150px; height: 60px; } .mgc-hint { bottom: 156px; font-size: 11px; } }
   `;
   doc.head.appendChild(style);
@@ -44,7 +46,7 @@
   const root = doc.createElement('div');
   root.className = 'mgc-root';
   root.innerHTML = `
-    <div class="mgc-hint">手機／平板：左側移動，右側攻擊與互動</div>
+    <div class="mgc-hint">單指點畫面：朝該方向移動｜雙指：放大縮小｜右側：攻擊與互動</div>
     <div class="mgc-pad" id="mgc-pad"><div class="mgc-knob" id="mgc-knob"></div></div>
     <div class="mgc-actions">
       <button class="mgc-btn attack" id="mgc-attack" type="button">攻擊</button>
@@ -53,12 +55,22 @@
     </div>`;
   doc.body.appendChild(root);
 
+  const tapMarker = doc.createElement('div');
+  tapMarker.className = 'mgc-tap-marker';
+  doc.body.appendChild(tapMarker);
+
   const keyMap = {
     KeyW: 'w', KeyA: 'a', KeyS: 's', KeyD: 'd',
     ArrowUp: 'ArrowUp', ArrowDown: 'ArrowDown', ArrowLeft: 'ArrowLeft', ArrowRight: 'ArrowRight',
     Space: ' ', KeyE: 'e', KeyF: 'f', KeyM: 'm', KeyJ: 'j', KeyK: 'k', ShiftLeft: 'Shift'
   };
   const active = new Set();
+  let moveSource = null;
+  let tapMoveTimer = null;
+  let screenMovePointerId = null;
+  let pinchActive = false;
+  let pinchDistance = 0;
+
   function keyEvent(type, code) {
     const event = new KeyboardEvent(type, { key: keyMap[code] || code, code, bubbles: true, cancelable: true });
     winDispatch(event);
@@ -77,10 +89,14 @@
     active.delete(code);
     keyEvent('keyup', code);
   }
-  function releaseAllMove() {
+  function releaseAllMove(source = null) {
+    if (source && moveSource && moveSource !== source) return;
     ['KeyW','KeyA','KeyS','KeyD','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].forEach(release);
+    if (!source || moveSource === source) moveSource = null;
   }
-  function setMove(nx, ny) {
+  function setMove(nx, ny, source = 'pad') {
+    if (moveSource && moveSource !== source) return;
+    moveSource = source;
     const dead = 0.18;
     const up = ny < -dead, down = ny > dead, left = nx < -dead, right = nx > dead;
     [['KeyW', up], ['ArrowUp', up], ['KeyS', down], ['ArrowDown', down], ['KeyA', left], ['ArrowLeft', left], ['KeyD', right], ['ArrowRight', right]].forEach(([code, on]) => on ? press(code) : release(code));
@@ -89,7 +105,7 @@
   const pad = doc.getElementById('mgc-pad');
   const knob = doc.getElementById('mgc-knob');
   function resetPad() {
-    releaseAllMove();
+    releaseAllMove('pad');
     knob.style.transform = 'translate(-50%, -50%)';
   }
   function updatePad(x, y) {
@@ -101,22 +117,66 @@
     const dist = Math.hypot(dx, dy);
     if (dist > max) { dx = dx / dist * max; dy = dy / dist * max; }
     knob.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
-    setMove(dx / max, dy / max);
+    setMove(dx / max, dy / max, 'pad');
   }
   pad.addEventListener('pointerdown', e => { e.preventDefault(); pad.setPointerCapture(e.pointerId); updatePad(e.clientX, e.clientY); }, { passive: false });
   pad.addEventListener('pointermove', e => { if (!pad.hasPointerCapture(e.pointerId)) return; e.preventDefault(); updatePad(e.clientX, e.clientY); }, { passive: false });
   ['pointerup','pointercancel','lostpointercapture'].forEach(type => pad.addEventListener(type, resetPad));
 
+  function primaryTarget() {
+    return doc.querySelector('canvas') || doc.body;
+  }
+  function targetCenter() {
+    const target = primaryTarget();
+    const rect = target.getBoundingClientRect();
+    return { target, x: rect.left + rect.width / 2, y: rect.top + rect.height / 2, rect };
+  }
+  function screenPointToMove(x, y, source = 'screen') {
+    const { rect } = targetCenter();
+    const cx = rect.left + rect.width / 2;
+    const cy = rect.top + rect.height / 2;
+    const radius = Math.max(80, Math.min(rect.width, rect.height) * 0.34);
+    const nx = Math.max(-1, Math.min(1, (x - cx) / radius));
+    const ny = Math.max(-1, Math.min(1, (y - cy) / radius));
+    setMove(nx, ny, source);
+    tapMarker.style.left = `${x}px`;
+    tapMarker.style.top = `${y}px`;
+    tapMarker.classList.add('show');
+  }
+  function stopScreenMove() {
+    clearTimeout(tapMoveTimer);
+    tapMoveTimer = null;
+    releaseAllMove('screen');
+    screenMovePointerId = null;
+    tapMarker.classList.remove('show');
+  }
+  function shouldIgnoreScreenTouch(target) {
+    if (!target || !target.closest) return false;
+    return !!target.closest('.mgc-root, button, a, input, textarea, select, [role="button"], [onclick], .pointer-auto, .interactive, .build-btn, .choice-btn, .chapter-card, .chapter-node');
+  }
+
   function centerPoint() {
-    const canvas = doc.querySelector('canvas');
-    const rect = (canvas || doc.body).getBoundingClientRect();
-    return { target: canvas || doc.body, x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
+    const { target, x, y } = targetCenter();
+    return { target, x, y };
   }
   function mouse(type, button = 0) {
     const { target, x, y } = centerPoint();
     const evt = new MouseEvent(type, { bubbles: true, cancelable: true, view: window, clientX: x, clientY: y, screenX: x, screenY: y, button, buttons: type === 'mouseup' ? 0 : (button === 2 ? 2 : 1) });
     try { target.dispatchEvent(evt); } catch (_) {}
     try { doc.dispatchEvent(evt); } catch (_) {}
+  }
+  function mouseAt(type, x, y, button = 0) {
+    const target = primaryTarget();
+    const evt = new MouseEvent(type, { bubbles: true, cancelable: true, view: window, clientX: x, clientY: y, screenX: x, screenY: y, button, buttons: type === 'mouseup' ? 0 : (button === 2 ? 2 : 1) });
+    try { target.dispatchEvent(evt); } catch (_) {}
+    try { doc.dispatchEvent(evt); } catch (_) {}
+  }
+  function wheelAt(x, y, deltaY) {
+    const target = primaryTarget();
+    const evt = new WheelEvent('wheel', { bubbles: true, cancelable: true, view: window, clientX: x, clientY: y, deltaY, deltaMode: 0, ctrlKey: true });
+    try { target.dispatchEvent(evt); } catch (_) {}
+    try { doc.dispatchEvent(evt); } catch (_) {}
+    try { window.dispatchEvent(evt); } catch (_) {}
   }
   function clickExisting(selectors) {
     for (const selector of selectors) {
@@ -168,8 +228,81 @@
     ['ShiftLeft','KeyM','KeyF'].forEach(release);
   });
 
+  // 單指點擊位置移動：在非按鈕區域點擊或按住畫面時，依手指位置相對於畫面中心換算 WASD / 方向鍵。
+  doc.addEventListener('pointerdown', e => {
+    if (e.pointerType !== 'touch') return;
+    if (shouldIgnoreScreenTouch(e.target)) return;
+    if (pinchActive) return;
+    e.preventDefault();
+    screenMovePointerId = e.pointerId;
+    try { primaryTarget().setPointerCapture && primaryTarget().setPointerCapture(e.pointerId); } catch (_) {}
+    screenPointToMove(e.clientX, e.clientY, 'screen');
+    mouseAt('mousemove', e.clientX, e.clientY, 0);
+    clearTimeout(tapMoveTimer);
+    tapMoveTimer = setTimeout(stopScreenMove, 1400);
+  }, { passive: false, capture: true });
+
+  doc.addEventListener('pointermove', e => {
+    if (e.pointerType !== 'touch') return;
+    if (pinchActive) return;
+    if (screenMovePointerId !== e.pointerId) return;
+    e.preventDefault();
+    screenPointToMove(e.clientX, e.clientY, 'screen');
+    mouseAt('mousemove', e.clientX, e.clientY, 0);
+    clearTimeout(tapMoveTimer);
+    tapMoveTimer = setTimeout(stopScreenMove, 900);
+  }, { passive: false, capture: true });
+
+  doc.addEventListener('pointerup', e => {
+    if (e.pointerType !== 'touch') return;
+    if (screenMovePointerId !== e.pointerId) return;
+    e.preventDefault();
+    // 點一下也會讓角色短暫朝目標方向前進；長按或拖曳放開後立即停止。
+    clearTimeout(tapMoveTimer);
+    tapMoveTimer = setTimeout(stopScreenMove, 260);
+  }, { passive: false, capture: true });
+  doc.addEventListener('pointercancel', e => {
+    if (e.pointerType === 'touch' && screenMovePointerId === e.pointerId) stopScreenMove();
+  }, { passive: false, capture: true });
+
+  // 雙指縮放：轉成 wheel 事件給 Three.js / canvas / 頁面監聽器接收。
+  doc.addEventListener('touchstart', e => {
+    if (!e.touches || e.touches.length < 2) return;
+    pinchActive = true;
+    stopScreenMove();
+    const [a, b] = e.touches;
+    pinchDistance = Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY);
+    e.preventDefault();
+  }, { passive: false, capture: true });
+
+  doc.addEventListener('touchmove', e => {
+    if (!pinchActive || !e.touches || e.touches.length < 2) return;
+    const [a, b] = e.touches;
+    const next = Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY);
+    const midX = (a.clientX + b.clientX) / 2;
+    const midY = (a.clientY + b.clientY) / 2;
+    const diff = next - pinchDistance;
+    if (Math.abs(diff) > 2) wheelAt(midX, midY, diff > 0 ? -90 : 90);
+    pinchDistance = next;
+    e.preventDefault();
+  }, { passive: false, capture: true });
+
+  doc.addEventListener('touchend', e => {
+    if (!pinchActive) return;
+    if (!e.touches || e.touches.length < 2) {
+      pinchActive = false;
+      pinchDistance = 0;
+      stopScreenMove();
+    }
+  }, { passive: false, capture: true });
+  doc.addEventListener('touchcancel', () => {
+    pinchActive = false;
+    pinchDistance = 0;
+    stopScreenMove();
+  }, { passive: false, capture: true });
+
   doc.querySelectorAll('canvas, button, a, [role="button"], [onclick]').forEach(el => {
-    el.style.touchAction = 'manipulation';
+    el.style.touchAction = el.closest && el.closest('button, a, [role="button"], [onclick]') ? 'manipulation' : 'none';
     el.style.webkitTapHighlightColor = 'transparent';
   });
 })();
