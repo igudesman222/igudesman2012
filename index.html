@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="zh-TW" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>新時代媒體實作課 - 學生作品集</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="preconnect" href="https://raw.githubusercontent.com" crossorigin>
+  <link rel="preconnect" href="https://media.githubusercontent.com" crossorigin>
+  <link rel="preconnect" href="https://github.com" crossorigin>
+  <link rel="preconnect" href="https://placehold.co" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800;900&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: { extend: { fontFamily: { sans: ['Inter', 'sans-serif'] }, colors: { primary: '#3b82f6', secondary: '#1e40af', dark: '#0f172a', light: '#f8fafc' } } }
+    };
+  </script>
+  <style>
+    ::-webkit-scrollbar{width:8px}::-webkit-scrollbar-track{background:#f1f1f1}.dark ::-webkit-scrollbar-track{background:#1e293b}::-webkit-scrollbar-thumb{background:#888;border-radius:4px}::-webkit-scrollbar-thumb:hover{background:#555}
+    .typing-cursor::after{content:'|';animation:blink 1s step-end infinite}@keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
+    .project-card{transition:transform .3s ease,box-shadow .3s ease}.project-card:hover{transform:translateY(-5px);box-shadow:0 10px 25px -5px rgba(0,0,0,.1),0 8px 10px -6px rgba(0,0,0,.1)}
+    .media-start-btn{position:absolute;left:50%;bottom:2.5rem;transform:translateX(-50%);z-index:120;display:none;align-items:center;gap:.75rem;padding:1rem 1.5rem;border-radius:999px;color:#fff;background:rgba(59,130,246,.94);box-shadow:0 18px 45px rgba(37,99,235,.35);font-weight:900;letter-spacing:.08em;backdrop-filter:blur(10px)}
+    .media-start-btn.show{display:flex}.media-start-btn:hover{background:#2563eb}.line-clamp-1{display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden}.line-clamp-3{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+  </style>
+</head>
+<body class="bg-light text-slate-800 dark:bg-dark dark:text-slate-200 font-sans transition-colors duration-300">
+  <nav class="fixed w-full z-50 top-0 transition-all duration-300 backdrop-blur-md bg-white/70 dark:bg-slate-900/80 border-b border-gray-200 dark:border-slate-800" id="navbar">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8"><div class="flex justify-between items-center h-16">
+      <a href="#" class="text-2xl font-bold text-primary tracking-tighter">Media<span class="text-slate-800 dark:text-white">Course</span></a>
+      <div class="hidden md:flex space-x-8 items-center"><a href="#home" class="hover:text-primary transition-colors font-medium">首頁</a><a href="#showcase" class="hover:text-primary transition-colors font-medium">作品展示</a><button id="theme-toggle" class="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-slate-700 transition-colors" aria-label="切換深色模式"><i class="fas fa-moon dark:hidden text-slate-700"></i><i class="fas fa-sun hidden dark:block text-yellow-400"></i></button></div>
+      <div class="md:hidden flex items-center space-x-4"><button id="mobile-theme-toggle" class="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-slate-700 transition-colors"><i class="fas fa-moon dark:hidden text-slate-700"></i><i class="fas fa-sun hidden dark:block text-yellow-400"></i></button><button id="mobile-menu-btn" class="text-slate-800 dark:text-white hover:text-primary focus:outline-none"><i class="fas fa-bars text-2xl"></i></button></div>
+    </div></div>
+    <div id="mobile-menu" class="hidden md:hidden bg-white dark:bg-slate-900 border-b border-gray-200 dark:border-slate-800 absolute w-full"><div class="px-2 pt-2 pb-3 space-y-1 sm:px-3 shadow-lg"><a href="#home" class="mobile-link block px-3 py-2 rounded-md text-base font-medium hover:bg-gray-100 dark:hover:bg-slate-800">首頁</a><a href="#showcase" class="mobile-link block px-3 py-2 rounded-md text-base font-medium hover:bg-gray-100 dark:hover:bg-slate-800">作品展示</a></div></div>
+  </nav>
+
+  <section id="home" class="min-h-screen flex items-center justify-center pt-16 relative overflow-hidden bg-gradient-to-br from-slate-900 via-dark to-slate-800 text-white">
+    <div class="absolute top-1/4 left-1/4 w-96 h-96 bg-primary rounded-full mix-blend-screen filter blur-[100px] opacity-40"></div><div class="absolute bottom-1/4 right-1/4 w-96 h-96 bg-purple-600 rounded-full mix-blend-screen filter blur-[100px] opacity-40"></div>
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 w-full flex flex-col items-center text-center">
+      <p class="text-primary font-bold tracking-[0.3em] uppercase mb-4 text-sm md:text-base">Creative Media Course</p>
+      <h1 class="text-5xl md:text-7xl lg:text-8xl font-extrabold leading-tight mb-6 tracking-tighter drop-shadow-lg">新媒體實作課</h1>
+      <h2 class="text-3xl md:text-4xl font-bold mb-8 text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-400"><span id="typing-course" class="typing-cursor"></span></h2>
+      <div class="mb-10 px-6 py-2.5 rounded-full bg-white/10 backdrop-blur-md border border-white/20 shadow-xl inline-block"><p class="text-xl font-medium text-white flex items-center"><i class="fas fa-chalkboard-teacher mr-3 text-primary"></i>授課老師：林咨任</p></div>
+      <p class="text-lg md:text-xl text-slate-300 max-w-2xl mx-auto mb-12 leading-relaxed">探索人工智慧與互動程式設計的無限可能。在這裡，我們結合技術與創意，開發屬於自己的網頁小遊戲與互動式預告片。</p>
+      <a href="#showcase" class="px-8 py-4 rounded-xl bg-primary text-white font-bold text-lg shadow-lg shadow-blue-500/30 hover:bg-blue-600 hover:-translate-y-1 transition-all duration-300 flex items-center justify-center"><i class="fas fa-th-large mr-3 text-xl"></i>觀看學生作品</a>
+    </div>
+  </section>
+
+  <section id="showcase" class="py-20 bg-white dark:bg-slate-800/50"><div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="text-center mb-16"><h2 class="text-3xl md:text-4xl font-bold mb-4">優秀學生作品 (GitHub 託管)</h2><div class="w-20 h-1 bg-primary mx-auto rounded-full"></div><p class="mt-4 text-slate-600 dark:text-slate-400">點擊作品後，請按「啟用聲音並播放」，可避免手機與平板阻擋音訊。</p></div>
+    <div class="mb-16"><div class="flex items-center mb-8 border-b border-gray-200 dark:border-slate-700 pb-4"><div class="w-12 h-12 rounded-xl bg-blue-100 dark:bg-blue-900/50 flex items-center justify-center mr-4 text-blue-500"><i class="fas fa-gamepad text-2xl"></i></div><h3 class="text-2xl md:text-3xl font-bold text-slate-800 dark:text-white">AI 程式小遊戲</h3><span class="ml-4 px-3 py-1 bg-slate-100 dark:bg-slate-800 rounded-full text-xs font-bold text-slate-500">7 組名額</span></div><div id="games-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"></div></div>
+    <div><div class="flex items-center mb-8 border-b border-gray-200 dark:border-slate-700 pb-4"><div class="w-12 h-12 rounded-xl bg-purple-100 dark:bg-purple-900/50 flex items-center justify-center mr-4 text-purple-500"><i class="fas fa-film text-2xl"></i></div><h3 class="text-2xl md:text-3xl font-bold text-slate-800 dark:text-white">互動預告片</h3><span class="ml-4 px-3 py-1 bg-slate-100 dark:bg-slate-800 rounded-full text-xs font-bold text-slate-500">7 組名額</span></div><div id="trailers-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"></div></div>
+  </div></section>
+
+  <div id="fullscreen-player-modal" class="fixed inset-0 z-[100] hidden bg-black flex items-center justify-center">
+    <button id="close-player-btn" class="absolute top-6 right-6 z-[110] text-white/70 hover:text-white bg-slate-900/50 hover:bg-red-600 rounded-full w-12 h-12 flex items-center justify-center transition-all shadow-lg backdrop-blur-sm group" title="離開全螢幕 (ESC)"><i class="fas fa-times text-2xl group-hover:rotate-90 transition-transform duration-300"></i></button>
+    <div id="fs-loading" class="absolute z-[105] text-white flex flex-col items-center"><div class="animate-spin rounded-full h-16 w-16 border-4 border-primary border-t-transparent mb-4"></div><p class="animate-pulse tracking-widest text-lg font-medium">載入中...</p></div>
+    <iframe id="fullscreen-iframe" class="w-full h-full border-0 relative z-[100] bg-black" sandbox="allow-scripts allow-same-origin allow-popups allow-pointer-lock allow-forms allow-modals" allow="autoplay; fullscreen; encrypted-media; picture-in-picture; gamepad" referrerpolicy="no-referrer-when-downgrade"></iframe>
+    <button id="media-start-btn" class="media-start-btn" type="button"><i class="fas fa-volume-high"></i>啟用聲音並播放</button>
+  </div>
+
+  <footer class="bg-white dark:bg-slate-900 py-8 border-t border-gray-200 dark:border-slate-800 text-center"><div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row justify-between items-center"><p class="text-slate-500 dark:text-slate-400 mb-4 md:mb-0">&copy; <span id="year"></span> MediaCourse. All rights reserved.</p><p class="text-slate-500 dark:text-slate-400 text-sm">Built with HTML, Tailwind CSS & Hosted on GitHub Pages</p></div></footer>
+  <a href="#home" id="back-to-top" class="fixed bottom-8 right-8 bg-primary text-white w-12 h-12 rounded-full flex items-center justify-center shadow-lg opacity-0 pointer-events-none transition-all duration-300 hover:bg-secondary hover:-translate-y-1 z-40"><i class="fas fa-arrow-up"></i></a>
+
+  <script>
+    document.getElementById('year').textContent = new Date().getFullYear();
+    const texts = ['AI程式小遊戲','互動預告片','網頁前端實作','創意程式設計']; let textIndex=0,charIndex=0,isDeleting=false; const typingElement=document.getElementById('typing-course');
+    function type(){if(!typingElement)return;const t=texts[textIndex];typingElement.textContent=isDeleting?t.substring(0,charIndex-1):t.substring(0,charIndex+1);charIndex+=isDeleting?-1:1;let s=isDeleting?50:100;if(!isDeleting&&charIndex===t.length){s=2000;isDeleting=true}else if(isDeleting&&charIndex===0){isDeleting=false;textIndex=(textIndex+1)%texts.length;s=500}setTimeout(type,s)} setTimeout(type,1000);
+    const themeToggleBtns=[document.getElementById('theme-toggle'),document.getElementById('mobile-theme-toggle')]; if(localStorage.theme==='dark'||(!('theme'in localStorage)&&window.matchMedia('(prefers-color-scheme: dark)').matches)){document.documentElement.classList.add('dark')}else{document.documentElement.classList.remove('dark')} themeToggleBtns.forEach(btn=>btn&&btn.addEventListener('click',()=>{document.documentElement.classList.toggle('dark');localStorage.theme=document.documentElement.classList.contains('dark')?'dark':'light'}));
+    const mobileMenuBtn=document.getElementById('mobile-menu-btn'),mobileMenu=document.getElementById('mobile-menu'); mobileMenuBtn.addEventListener('click',()=>mobileMenu.classList.toggle('hidden')); document.querySelectorAll('.mobile-link').forEach(link=>link.addEventListener('click',()=>mobileMenu.classList.add('hidden')));
+    const navbar=document.getElementById('navbar'),backToTopBtn=document.getElementById('back-to-top'); window.addEventListener('scroll',()=>{if(window.scrollY>50){navbar.classList.add('shadow-md');backToTopBtn.classList.remove('opacity-0','pointer-events-none');backToTopBtn.classList.add('opacity-100','pointer-events-auto')}else{navbar.classList.remove('shadow-md');backToTopBtn.classList.add('opacity-0','pointer-events-none');backToTopBtn.classList.remove('opacity-100','pointer-events-auto')}});
+
+    const realGames=[
+      {title:'第一組，《四接疑雲》',desc:'第一組精心製作的網頁互動小遊戲，點擊進入全螢幕遊玩。',author:'第一組',image:'https://placehold.co/600x400/0ea5e9/ffffff?text=Group+1+Game',url:'./02-小遊戲/01-第一組小遊戲-四接疑雲.html'},
+      {title:'第二組，《漁民的抉擇》',desc:'第二組精心製作的網頁互動小遊戲，點擊進入全螢幕遊玩。',author:'第二組',image:'https://placehold.co/600x400/0ea5e9/ffffff?text=Group+2+Game',url:'./02-小遊戲/02-第二組小遊戲-漁民的抉擇.html'},
+      {title:'第三組，《七股風雲》',desc:'第三組精心製作的網頁互動小遊戲，點擊進入全螢幕遊玩。',author:'第三組',image:'https://placehold.co/600x400/0ea5e9/ffffff?text=Group+3+Game',url:'./02-小遊戲/03-第三組小遊戲-七股風雲.html'},
+      {title:'第四組，《五達悟》',desc:'結合動態特效與回合制戰鬥的網頁遊戲體驗。啟動靈魂盟約，在深海中進行決戰。',author:'第四組',image:'https://placehold.co/600x400/0ea5e9/ffffff?text=Group+4+Game',url:'./02-小遊戲/04-第四組小遊戲-五達悟.html'},
+      {title:'第五組，《海電綠能大亨》',desc:'第五組精心製作的網頁互動小遊戲，點擊進入全螢幕遊玩。',author:'第五組',image:'https://placehold.co/600x400/0ea5e9/ffffff?text=Group+5+Game',url:'./02-小遊戲/05-第五組小遊戲-海電綠能大亨.html'},
+      {title:'第六組，《銀翼守護者》',desc:'第六組精心製作的網頁互動小遊戲，點擊進入全螢幕遊玩。',author:'第六組',image:'https://placehold.co/600x400/0ea5e9/ffffff?text=Group+6+Game',url:'./02-小遊戲/06-第六組小遊戲-銀翼守護者.html'},
+      {title:'第七組，《海之契約》',desc:'第七組精心製作的網頁互動小遊戲，點擊進入全螢幕遊玩。',author:'第七組',image:'https://placehold.co/600x400/0ea5e9/ffffff?text=Group+7+Game',url:'./02-小遊戲/07-第七組小遊戲-海之契約.html'}
+    ];
+    const realTrailers=[
+      {title:'第一組，《四接疑雲》預告片',desc:'第一組精心製作的網頁互動預告片，點擊進入全螢幕觀看。',author:'第一組',image:'https://placehold.co/600x400/8b5cf6/ffffff?text=Group+1+Trailer',url:'./01-預告片/01-第一組遊戲預告片_0610.html'},
+      {title:'第二組，《漁民的抉擇》預告片',desc:'漁民的抉擇：了解真相，是改變的開始。3D實機對白預告片，揭露光電背後的故事。',author:'第二組',image:'https://placehold.co/600x400/8b5cf6/ffffff?text=Group+2+Trailer',url:'./01-預告片/02-第二組預告片.html'},
+      {title:'第三組，《七股風雲》預告片',desc:'在魚塭與綠能之間，做出你的抉擇！這是一部探討漁電共生議題的互動預告片。',author:'第三組',image:'https://placehold.co/600x400/8b5cf6/ffffff?text=Group+3+Trailer',url:'./01-預告片/03-第三組遊戲預告片_0610.html'},
+      {title:'第四組，《五達悟》預告片',desc:'第四組精心製作的網頁互動預告片，點擊進入全螢幕觀看。',author:'第四組',image:'https://placehold.co/600x400/8b5cf6/ffffff?text=Group+4+Trailer',url:'./01-預告片/04-第四組預告片.html'},
+      {title:'第五組，《海電綠能大亨》預告片',desc:'第五組精心製作的網頁互動預告片，點擊進入全螢幕觀看。',author:'第五組',image:'https://placehold.co/600x400/8b5cf6/ffffff?text=Group+5+Trailer',url:'./01-預告片/05-第五組預告片.html'},
+      {title:'第六組，《銀翼守護者》預告片',desc:'第六組精心製作的網頁互動預告片，點擊進入全螢幕觀看。',author:'第六組',image:'https://placehold.co/600x400/8b5cf6/ffffff?text=Group+6+Trailer',url:'./01-預告片/06-第六組預告片.html'},
+      {title:'第七組，《海之契約》預告片',desc:'第七組精心製作的網頁互動預告片，點擊進入全螢幕觀看。',author:'第七組',image:'https://placehold.co/600x400/8b5cf6/ffffff?text=Group+7+Trailer',url:'./01-預告片/07-第七組預告片.html'}
+    ];
+    function padArrayToSeven(arr,typeLabel){const result=[...arr];while(result.length<7)result.push({isEmpty:true,type:typeLabel});return result}
+    const gameProjects=padArrayToSeven(realGames,'小遊戲'),trailerProjects=padArrayToSeven(realTrailers,'預告片'),gamesGrid=document.getElementById('games-grid'),trailersGrid=document.getElementById('trailers-grid');
+    function generateCardHTML(project,typeColor,iconClass,index){if(project.isEmpty)return `<div class="border-2 border-dashed border-gray-300 dark:border-slate-700 rounded-xl h-full min-h-[280px] flex flex-col items-center justify-center p-8 text-gray-400 dark:text-slate-500 bg-gray-50/50 dark:bg-slate-800/20"><div class="w-14 h-14 rounded-full bg-gray-200 dark:bg-slate-700 flex items-center justify-center mb-4"><i class="fas fa-plus text-xl opacity-50"></i></div><h3 class="text-lg font-bold mb-1 text-gray-500 dark:text-slate-400">專案招募中</h3><p class="text-xs text-center">保留給優秀的${project.type}作品</p></div>`;return `<div class="project-card bg-light dark:bg-slate-900 rounded-xl overflow-hidden border border-gray-200 dark:border-slate-700 cursor-pointer flex flex-col h-full min-h-[280px]" onclick="openFullscreenPlayer('${project.url.replace(/'/g,"\\'")}')" onmouseenter="warmupProjectDocument('${project.url.replace(/'/g,"\\'")}','prefetch')" ontouchstart="warmupProjectDocument('${project.url.replace(/'/g,"\\'")}','prefetch')"><div class="h-40 overflow-hidden relative group bg-slate-800 shrink-0"><img src="${project.image}" alt="${project.title}" loading="${index<2?'eager':'lazy'}" decoding="async" fetchpriority="${index<2?'high':'auto'}" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110 opacity-90 group-hover:opacity-100"><div class="absolute inset-0 bg-black/60 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 backdrop-blur-sm"><i class="fas ${iconClass} text-5xl text-white mb-3"></i><span class="text-white font-bold tracking-wider">全螢幕開啟</span></div></div><div class="p-5 flex flex-col flex-grow"><h3 class="text-lg font-bold text-slate-800 dark:text-white line-clamp-1 mb-2">${project.title}</h3><p class="text-slate-600 dark:text-slate-400 mb-4 text-xs line-clamp-3 flex-grow leading-relaxed">${project.desc}</p><div class="flex items-center text-xs text-slate-500 dark:text-slate-400 pt-3 border-t border-gray-100 dark:border-slate-800"><i class="fas fa-user-graduate mr-2 text-primary"></i>作者：<span class="font-medium">${project.author}</span></div></div></div>`}
+    function renderShowcases(){gamesGrid.innerHTML=gameProjects.map((p,i)=>generateCardHTML(p,'blue','fa-play-circle',i)).join('');trailersGrid.innerHTML=trailerProjects.map((p,i)=>generateCardHTML(p,'purple','fa-film',i)).join('')} renderShowcases();
+
+    const playerModal=document.getElementById('fullscreen-player-modal'),fsIframe=document.getElementById('fullscreen-iframe'),closePlayerBtn=document.getElementById('close-player-btn'),fsLoading=document.getElementById('fs-loading'),mediaStartBtn=document.getElementById('media-start-btn'); let resourceWarmupStarted=false;
+    function normalizeProjectUrl(url){return new URL(url,window.location.href).href} if(!window.CSS)window.CSS={}; if(!window.CSS.escape)window.CSS.escape=value=>String(value).replace(/[^a-zA-Z0-9_-]/g,m=>'\\'+m);
+    function warmupProjectDocument(url,rel='prefetch'){if(!url||!document.head)return;const href=normalizeProjectUrl(url);if(document.querySelector(`link[data-prefetch-url="${CSS.escape(href)}"]`))return;const link=document.createElement('link');link.rel=rel;link.as='document';link.href=href;link.dataset.prefetchUrl=href;document.head.appendChild(link)} window.warmupProjectDocument=warmupProjectDocument;
+    function warmupVisibleProjects(){if(resourceWarmupStarted)return;resourceWarmupStarted=true;const projects=[...realTrailers,...realGames];projects.slice(0,4).forEach(p=>warmupProjectDocument(p.url,'prefetch'));const runLater=window.requestIdleCallback||(cb=>setTimeout(cb,1200));runLater(()=>projects.slice(4).forEach(p=>warmupProjectDocument(p.url,'prefetch')))} window.addEventListener('load',warmupVisibleProjects,{once:true});
+    async function resumeFrameAudioContext(win){try{Object.keys(win).forEach(k=>{try{const v=win[k];if(v&&typeof v.resume==='function'&&v.state==='suspended')v.resume()}catch(_){}})}catch(_){}}
+    async function unlockFrameMedia(){let doc,win;try{doc=fsIframe.contentDocument;win=fsIframe.contentWindow}catch(error){console.warn('無法存取 iframe 內容，可能是跨來源限制：',error);return}if(!doc||!win)return;await resumeFrameAudioContext(win);const startButton=[...doc.querySelectorAll('button,[role="button"],a')].find(el=>/進入|開始|播放|START|PLAY|體驗/i.test((el.textContent||'').trim()));if(startButton){try{startButton.dispatchEvent(new win.PointerEvent('pointerdown',{bubbles:true,pointerType:'touch'}))}catch(_){}try{startButton.dispatchEvent(new win.MouseEvent('mousedown',{bubbles:true}))}catch(_){}startButton.click()}const mediaEls=[...doc.querySelectorAll('video,audio')];mediaEls.forEach((el,index)=>{try{el.preload=index<3?'auto':'metadata';el.muted=false;el.volume=Math.max(el.volume||0,el.tagName.toLowerCase()==='audio'?.8:1);if(index<3||el.autoplay){const p=el.play();if(p&&typeof p.catch==='function')p.catch(err=>console.debug('媒體播放需再次互動或由作品頁控制：',err))}}catch(_){}});mediaStartBtn.classList.remove('show');fsIframe.contentWindow.focus()}
+    function installFrameResourcePolicy(){let doc;try{doc=fsIframe.contentDocument}catch(_){return}if(!doc)return;doc.querySelectorAll('img').forEach((img,index)=>{img.loading=index<4?'eager':'lazy';img.decoding='async';if(index<4)img.fetchPriority='high'});doc.querySelectorAll('video,audio').forEach((m,index)=>{m.preload=(index>2&&!m.autoplay)?'metadata':'auto';m.setAttribute('playsinline','')})}
+    function openFullscreenPlayer(url){playerModal.classList.remove('hidden');fsLoading.classList.remove('hidden');mediaStartBtn.classList.remove('show');fsIframe.style.opacity='0';warmupProjectDocument(url,'preload');fsIframe.src=url;fsIframe.onload=function(){fsLoading.classList.add('hidden');fsIframe.style.opacity='1';installFrameResourcePolicy();mediaStartBtn.classList.add('show');try{fsIframe.contentWindow.focus()}catch(_){}};const elem=playerModal;if(elem.requestFullscreen)elem.requestFullscreen().catch(err=>console.log('全螢幕請求被拒絕:',err));else if(elem.webkitRequestFullscreen)elem.webkitRequestFullscreen();else if(elem.msRequestFullscreen)elem.msRequestFullscreen()} window.openFullscreenPlayer=openFullscreenPlayer;
+    function closeFullscreenPlayer(){if(document.fullscreenElement||document.webkitFullscreenElement){if(document.exitFullscreen)document.exitFullscreen();else if(document.webkitExitFullscreen)document.webkitExitFullscreen()}playerModal.classList.add('hidden');mediaStartBtn.classList.remove('show');fsIframe.src=''} closePlayerBtn.addEventListener('click',closeFullscreenPlayer); mediaStartBtn.addEventListener('click',unlockFrameMedia); mediaStartBtn.addEventListener('touchend',event=>{event.preventDefault();unlockFrameMedia()},{passive:false});
+    const fullscreenChangeHandlers=()=>{if(!document.fullscreenElement&&!document.webkitFullscreenElement){playerModal.classList.add('hidden');mediaStartBtn.classList.remove('show');fsIframe.src=''}}; document.addEventListener('fullscreenchange',fullscreenChangeHandlers);document.addEventListener('webkitfullscreenchange',fullscreenChangeHandlers);
+  </script>
+</body>
+</html>
