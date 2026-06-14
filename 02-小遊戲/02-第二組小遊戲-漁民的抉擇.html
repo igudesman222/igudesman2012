@@ -161,7 +161,7 @@
                 showNotification("背景音樂已暫停", "info");
             } else {
                 AudioManager.start();
-                showNotification(\\`${'${AudioManager.getCurrentTrackLabel()}'}背景音樂播放中...\\`, "success");
+                showNotification(AudioManager.getCurrentTrackLabel() + "背景音樂播放中...", "success");
             }
         }
 
