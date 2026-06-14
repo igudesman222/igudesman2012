@@ -16,9 +16,176 @@
   <script>
     const RAW_GAME='https://raw.githubusercontent.com/igudesman222/-/39397fdbf19048312c014cfcb8165c24b6e7c3f3/02-%E5%B0%8F%E9%81%8A%E6%88%B2/02-%E7%AC%AC%E4%BA%8C%E7%B5%84%E5%B0%8F%E9%81%8A%E6%88%B2-%E6%BC%81%E6%B0%91%E7%9A%84%E6%8A%89%E6%93%87.html';
     const RAW_BASE='https://raw.githubusercontent.com/igudesman222/-/39397fdbf19048312c014cfcb8165c24b6e7c3f3/02-%E5%B0%8F%E9%81%8A%E6%88%B2/';
+
+    function patchTimeBasedBgm(html){
+      const audioStart='        // === 背景音樂與電動機車馬達聲合成器 (Web Audio API) ===';
+      const audioEnd='        function toggleMusic() {';
+      const newAudioBlock=`        // === 背景音樂 MP3 播放器與電動機車馬達聲合成器 ===
+        // 上午：06:00-11:59；下午：12:00-18:00
+        const BGM_TRACKS = {
+            morning: {
+                label: '上午',
+                src: '../02-第二組資源/02-003-音樂/02-第二組背景音樂(上午).mp3'
+            },
+            afternoon: {
+                label: '下午',
+                src: '../02-第二組資源/02-003-音樂/04-七股夕照的慵懶飛行(下午).mp3'
+            }
+        };
+
+        function getBgmPeriodByTime(time) {
+            return time < 12.0 ? 'morning' : 'afternoon';
+        }
+
+        const AudioManager = {
+            ctx: null,
+            isPlaying: false,
+            bgm: null,
+            currentPeriod: null,
+            motorOsc: null,
+            motorGain: null,
+            isMotorHumming: false,
+
+            init() {
+                if (!this.bgm) {
+                    this.bgm = new Audio();
+                    this.bgm.loop = true;
+                    this.bgm.preload = 'auto';
+                    this.bgm.volume = 0.45;
+                }
+                if (!this.ctx) {
+                    try {
+                        this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+                    } catch(e) {
+                        console.error('此瀏覽器不支援 Web Audio API，電動機車馬達聲將不會播放。');
+                    }
+                }
+            },
+
+            getCurrentPeriod() {
+                const currentTime = (typeof virtualTime === 'number') ? virtualTime : 6.0;
+                return getBgmPeriodByTime(currentTime);
+            },
+
+            updateTrackByTime(force = false) {
+                this.init();
+                if (!this.bgm) return;
+                const period = this.getCurrentPeriod();
+                if (!force && this.currentPeriod === period) return;
+                const track = BGM_TRACKS[period];
+                this.currentPeriod = period;
+                this.bgm.src = track.src;
+                this.bgm.currentTime = 0;
+                this.bgm.load();
+                if (this.isPlaying) this.playBgm();
+            },
+
+            playBgm() {
+                if (!this.bgm) return;
+                const playPromise = this.bgm.play();
+                if (playPromise) {
+                    playPromise.catch(err => {
+                        console.warn('背景音樂暫時無法播放，可能需要玩家先點擊畫面。', err);
+                    });
+                }
+            },
+
+            start() {
+                this.init();
+                if (this.ctx && this.ctx.state === 'suspended') this.ctx.resume();
+                this.isPlaying = true;
+                this.updateTrackByTime(true);
+                this.playBgm();
+                document.getElementById('music-icon').style.opacity = '1';
+            },
+
+            stop() {
+                this.isPlaying = false;
+                if (this.bgm) this.bgm.pause();
+                document.getElementById('music-icon').style.opacity = '0.4';
+            },
+
+            getCurrentTrackLabel() {
+                const period = this.currentPeriod || this.getCurrentPeriod();
+                return BGM_TRACKS[period].label;
+            },
+
+            startMotorHum() {
+                this.init();
+                if (!this.ctx) return;
+                if (this.ctx.state === 'suspended') this.ctx.resume();
+                if (this.isMotorHumming) return;
+                try {
+                    this.motorOsc = this.ctx.createOscillator();
+                    this.motorGain = this.ctx.createGain();
+                    this.motorOsc.type = 'sine';
+                    this.motorOsc.frequency.setValueAtTime(75, this.ctx.currentTime);
+                    this.motorGain.gain.setValueAtTime(0.0, this.ctx.currentTime);
+                    this.motorOsc.connect(this.motorGain);
+                    this.motorGain.connect(this.ctx.destination);
+                    this.motorOsc.start();
+                    this.isMotorHumming = true;
+                } catch (e) { console.error(e); }
+            },
+            updateMotorFrequency(speedRatio) {
+                if (!this.isMotorHumming || !this.motorOsc || !this.motorGain) return;
+                const now = this.ctx.currentTime;
+                const targetFreq = 75 + speedRatio * 85;
+                const targetVol = 0.02 + speedRatio * 0.06;
+                this.motorOsc.frequency.setTargetAtTime(targetFreq, now, 0.1);
+                this.motorGain.gain.setTargetAtTime(targetVol, now, 0.15);
+            },
+            stopMotorHum() {
+                if (!this.isMotorHumming) return;
+                try {
+                    if (this.motorGain) this.motorGain.gain.setTargetAtTime(0, this.ctx.currentTime, 0.1);
+                    setTimeout(() => {
+                        if (this.motorOsc) { this.motorOsc.stop(); this.motorOsc.disconnect(); }
+                        if (this.motorGain) this.motorGain.disconnect();
+                        this.motorOsc = null; this.motorGain = null; this.isMotorHumming = false;
+                    }, 150);
+                } catch (e) { console.error(e); }
+            }
+        };
+
+`;
+      const startIndex=html.indexOf(audioStart);
+      const endIndex=html.indexOf(audioEnd,startIndex);
+      if(startIndex!==-1 && endIndex!==-1){
+        html=html.slice(0,startIndex)+newAudioBlock+html.slice(endIndex);
+      }
+
+      html=html.replace(/        function toggleMusic\(\) \{[\s\S]*?        \}\n\n        \/\/ === 狀態與天數設定 ===/,`        function toggleMusic() {
+            if (AudioManager.isPlaying) {
+                AudioManager.stop();
+                showNotification("背景音樂已暫停", "info");
+            } else {
+                AudioManager.start();
+                showNotification(\\`${'${AudioManager.getCurrentTrackLabel()}'}背景音樂播放中...\\`, "success");
+            }
+        }
+
+        // === 狀態與天數設定 ===`);
+
+      html=html.replace(`            // 環境光亮度也跟著太陽高度漸變
+            globalHemiLight.intensity = 0.3 + 0.5 * Math.sin(sunAngle);
+        }
+
+        function animate() {`,`            // 環境光亮度也跟著太陽高度漸變
+            globalHemiLight.intensity = 0.3 + 0.5 * Math.sin(sunAngle);
+
+            // 依遊戲內時間自動切換上午／下午背景音樂
+            if (AudioManager.isPlaying) AudioManager.updateTrackByTime();
+        }
+
+        function animate() {`);
+
+      return html;
+    }
+
     async function boot(){
       const [html, controls] = await Promise.all([fetch(RAW_GAME).then(r=>r.text()), fetch('./mobile-game-controls.js').then(r=>r.text())]);
-      let patched = html.replace('<head>', '<head><base href="'+RAW_BASE+'">');
+      let patched = patchTimeBasedBgm(html).replace('<head>', '<head><base href="'+RAW_BASE+'">');
       patched = patched.replace('</body>', '<script>'+controls.replace(/<\\/script>/gi,'<\\/script>')+'<\\/script></body>');
       const frame=document.getElementById('game-frame');
       frame.srcdoc=patched;
